@@ -147,7 +147,7 @@ def run_job(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default="configs/base.yaml")
-    parser.add_argument("--base-url", default="http://localhost:8000")
+    parser.add_argument("--base-url", default="http://localhost:8010")
     parser.add_argument("--extras", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--no-reflect-server", action="store_true",

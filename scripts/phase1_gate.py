@@ -27,7 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=["smoke", "full"], required=True)
     parser.add_argument("--task", default="gsm8k")
-    parser.add_argument("--base-url", default="http://localhost:8000")
+    parser.add_argument("--base-url", default="http://localhost:8010")
     parser.add_argument("--config", default="configs/base.yaml")
     args = parser.parse_args(argv)
 
