@@ -39,6 +39,7 @@ def _run(cmd: list[str], cfg: Config) -> str:
         cwd=str(VENDOR_DIR),
         capture_output=True,
         text=True,
+        check=False,
         env={**_env(cfg), "CUDA_VISIBLE_DEVICES": str(cfg.gpu_target)},
     )
     elapsed = time.time() - started
