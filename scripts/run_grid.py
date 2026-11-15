@@ -150,6 +150,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base-url", default="http://localhost:8010")
     parser.add_argument("--extras", action="store_true")
     parser.add_argument("--no-gepa", action="store_true")
+    parser.add_argument("--gepa-tasks", default=None,
+                        help="comma separated tasks to optimise with GEPA")
+    parser.add_argument("--gepa-arms", default=None,
+                        help="comma separated GEPA arms, e.g. gepa_3shot")
     parser.add_argument("--gepa-seeds", default=None,
                         help="comma separated seeds for GEPA arms, e.g. 0")
     parser.add_argument("--dry-run", action="store_true")
@@ -159,7 +163,10 @@ def main(argv: list[str] | None = None) -> int:
 
     cfg = load_config(args.config)
     gs = [int(s) for s in args.gepa_seeds.split(",")] if args.gepa_seeds else None
-    jobs = plan_grid(cfg, extras=args.extras, gepa=not args.no_gepa, gepa_seeds=gs)
+    ga = args.gepa_arms.split(",") if args.gepa_arms else None
+    gt = args.gepa_tasks.split(",") if args.gepa_tasks else None
+    jobs = plan_grid(cfg, extras=args.extras, gepa=not args.no_gepa, gepa_seeds=gs,
+                     gepa_arms=ga, gepa_tasks=gt)
     assert_one_job_per_gpu(jobs)
     for job in jobs:
         print(f"{job.kind:7s} gpu{job.gpu}  {job.arm:16s} {job.task:14s} seed={job.seed}")

@@ -17,7 +17,7 @@ def test_base_config_matches_global_constraints():
     assert cfg.tasks == ("gsm8k", "arc_challenge", "arc_easy", "boolq",
                         "hellaswag", "openbookqa", "piqa", "winogrande")
     assert cfg.seeds == (0, 1, 2)
-    assert cfg.gepa_budget == 1500
+    assert cfg.gepa_budget == 600
     assert cfg.gpu_target == 6 and cfg.gpu_reflect == 7
     assert cfg.temperature == 0.0
     assert cfg.rollout_temperature == 0.6 and cfg.rollout_top_p == 0.95

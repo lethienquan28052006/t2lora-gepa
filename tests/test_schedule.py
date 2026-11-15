@@ -88,3 +88,16 @@ def test_gepa_seeds_can_be_restricted(cfg):
     jobs = plan_grid(cfg, gepa_seeds=[0])
     gepa_jobs = [j for j in jobs if j.arm.startswith("gepa")]
     assert gepa_jobs and {j.seed for j in gepa_jobs} == {0}
+
+
+def test_gepa_arms_can_be_restricted(cfg):
+    jobs = plan_grid(cfg, gepa_arms=["gepa_3shot"])
+    gepa = {j.arm for j in jobs if j.arm.startswith("gepa")}
+    assert gepa == {"gepa_3shot"}
+
+
+def test_gepa_tasks_can_be_restricted(cfg):
+    jobs = plan_grid(cfg, gepa_tasks=["boolq"])
+    gepa_tasks = {j.task for j in jobs if j.arm.startswith("gepa")}
+    assert gepa_tasks == {"boolq"}
+    assert {j.task for j in jobs if j.arm == "base"} == set(cfg.tasks)

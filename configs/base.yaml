@@ -13,7 +13,7 @@ tasks:
   - winogrande
 
 seeds: [0, 1, 2]
-gepa_budget: 1500
+gepa_budget: 600
 
 gpu_target: 6
 gpu_reflect: 7
