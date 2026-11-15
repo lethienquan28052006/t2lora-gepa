@@ -1,6 +1,6 @@
-model_id: google/gemma-2-2b-it
-t2l_checkpoint: trained_t2l/gemma_2b_t2l
-reflection_model: Qwen/Qwen3-14B-Instruct
+model_id: unsloth/gemma-2-2b-it
+t2l_checkpoint: artifacts/t2l_ckpt/gemma_2b_t2l
+reflection_model: Qwen/Qwen3-8B-AWQ
 
 tasks:
   - gsm8k

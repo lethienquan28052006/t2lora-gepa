@@ -80,18 +80,35 @@ def _download(task: str, split: str) -> list[dict]:
 
 def load_task(task: str, split: str, cache_dir: str = "data") -> list[Example]:
     path = _cache_path(cache_dir, task, split)
+    examples = _read_cache(path)
+    if examples is None:
+        examples = _rebuild_cache(task, split, path)
+    return examples
+
+
+def _read_cache(path: Path) -> list[Example] | None:
     if not path.exists():
-        rows = _download(task, split)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        examples = [map_row(task, split, i, row) for i, row in enumerate(rows)]
-        path.write_text(
-            "\n".join(json.dumps(ex.__dict__, ensure_ascii=False) for ex in examples) + "\n"
-        )
-    out = []
-    for line in path.read_text().splitlines():
-        if line.strip():
-            out.append(Example(**json.loads(line)))
+        return None
+    out: list[Example] = []
+    try:
+        for line in path.read_text().splitlines():
+            if line.strip():
+                out.append(Example(**json.loads(line)))
+    except (json.JSONDecodeError, TypeError):
+        return None
     return out
+
+
+def _rebuild_cache(task: str, split: str, path: Path) -> list[Example]:
+    rows = _download(task, split)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    examples = [map_row(task, split, i, row) for i, row in enumerate(rows)]
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(
+        "\n".join(json.dumps(ex.__dict__, ensure_ascii=False) for ex in examples) + "\n"
+    )
+    tmp.replace(path)
+    return examples
 
 
 def make_splits(

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from t2lgepa.serve import BASE_URL_DEFAULT, build_serve_cmd, gepa_prompt_from_curve, run_all
 
-BASE = "google/gemma-2-2b-it"
+BASE = "unsloth/gemma-2-2b-it"
 
 
 def test_serve_cmd_enables_lora_and_names_module(cfg):

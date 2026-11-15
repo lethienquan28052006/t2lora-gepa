@@ -12,7 +12,7 @@ def test_fingerprint_is_stable_and_order_insensitive(tmp_path):
 
 def test_base_config_matches_global_constraints():
     cfg = load_config("configs/base.yaml")
-    assert cfg.model_id == "google/gemma-2-2b-it"
+    assert cfg.model_id == "unsloth/gemma-2-2b-it"
     assert cfg.t2l_checkpoint.endswith("gemma_2b_t2l")
     assert cfg.tasks == ("gsm8k", "arc_challenge")
     assert cfg.seeds == (0, 1, 2)

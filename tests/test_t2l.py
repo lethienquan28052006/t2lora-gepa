@@ -45,3 +45,19 @@ def test_describe_task_is_versioned_and_task_specific():
 
 def test_lora_module_name():
     assert lora_module_name("gsm8k") == "t2l_gsm8k"
+
+
+def test_checkpoint_path_is_passed_absolutely(tmp_path, monkeypatch, cfg):
+    captured = {}
+
+    def fake_run(cmd, cfg):
+        captured["cmd"] = cmd
+        target = tmp_path / "loras" / "gsm8k"
+        target.mkdir(parents=True)
+        (target / "adapter_config.json").write_text("{}")
+        return STDOUT.replace("{LORA_DIR}", str(target))
+
+    monkeypatch.setattr(t2l, "_run", fake_run)
+    generate_lora(cfg, "gsm8k", str(tmp_path / "loras"))
+    ckpt_arg = captured["cmd"][captured["cmd"].index("scripts/generate_lora.py") + 1]
+    assert ckpt_arg.startswith("/")

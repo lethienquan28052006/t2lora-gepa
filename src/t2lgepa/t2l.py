@@ -67,7 +67,7 @@ def generate_lora(cfg: Config, task: str, out_dir: str) -> Path:
         str(VENDOR_DIR),
         "python",
         "scripts/generate_lora.py",
-        cfg.t2l_checkpoint,
+        str(Path(cfg.t2l_checkpoint).resolve()),
         description,
     ]
     stdout = _run(cmd, cfg)

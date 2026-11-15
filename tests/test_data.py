@@ -107,3 +107,27 @@ def test_leakage_detected_by_question_text_even_with_different_ids():
                    answers=[], answer="7", rationale=None, split="test")
     with pytest.raises(LeakageError, match="question"):
         assert_no_leakage(Splits(train=[train], pareto=[], test=[test]))
+
+
+def test_corrupt_cache_is_rebuilt_not_returned(tmp_path, monkeypatch):
+    (tmp_path / "gsm8k_test.jsonl").write_text('{"id": "broken", "question": "trunc')
+    rows = [{"question": "1+1?", "answer": "1+1 = 2\n#### 2"}]
+    calls = {"n": 0}
+
+    def fake_download(task, split):
+        calls["n"] += 1
+        return rows
+
+    monkeypatch.setattr("t2lgepa.data._download", fake_download)
+    examples = load_task("gsm8k", "test", cache_dir=tmp_path)
+    assert calls["n"] == 1 and len(examples) == 1 and examples[0].answer == "2"
+
+
+def test_cache_write_is_atomic(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        "t2lgepa.data._download",
+        lambda task, split: [{"question": "q", "answer": "#### 3"}],
+    )
+    load_task("gsm8k", "test", cache_dir=tmp_path)
+    assert not list(tmp_path.glob("*.tmp"))
+    assert (tmp_path / "gsm8k_test.jsonl").read_text().endswith("\n")

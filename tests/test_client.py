@@ -50,12 +50,18 @@ def test_requested_model_must_be_base_or_known_adapter(respx_mock):
 
 
 def test_generate_preserves_input_order_with_concurrency(respx_mock):
-    respx_mock.post(f"{URL}/v1/chat/completions").mock(
-        side_effect=[
-            respx.MockResponse(json=CHAT_RESP),
-            respx.MockResponse(json={**CHAT_RESP, "choices": [{"message": {"content": "#### 7"},
-                                                               "finish_reason": "stop"}]}),
-        ]
-    )
-    out = VLLMClient(URL, BASE, adapters=[]).generate(["a", "b"], model=BASE)
-    assert [g.text for g in out] == ["#### 18", "#### 7"]
+    import json
+
+    import httpx
+
+    def handler(request):
+        prompt = json.loads(request.content)["messages"][0]["content"]
+        text = "#### 18" if prompt == "a" else "#### 7"
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": text}, "finish_reason": "stop"}],
+            "usage": {"completion_tokens": 5},
+        })
+
+    respx_mock.post(f"{URL}/v1/chat/completions").mock(side_effect=handler)
+    out = VLLMClient(URL, BASE, adapters=[]).generate(["a", "b"] * 5, model=BASE)
+    assert [g.text for g in out] == ["#### 18", "#### 7"] * 5
