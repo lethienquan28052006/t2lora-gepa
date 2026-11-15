@@ -18,7 +18,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def build_results_payload(results_dir: str | Path) -> dict:
-    from make_tables import collect
+    from t2lgepa.tables import collect
 
     results_dir = Path(results_dir)
     if not results_dir.exists():

@@ -109,3 +109,22 @@ def test_make_tables_computes_paired_delta(tmp_path):
     out = tmp_path / "report"
     main(["--results", str(results), "--out", str(out)])
     assert "vs base" in (out / "accuracy.md").read_text()
+
+
+def test_tables_module_collect_is_importable_from_the_package(tmp_path):
+    import json
+
+    from t2lgepa.tables import collect
+
+    results = tmp_path / "results"
+    results.mkdir()
+    summary = {"record_type": "summary", "arm": "base", "task": "gsm8k", "seed": 0,
+               "fingerprint": "f", "n": 2, "score": 0.5, "wall_seconds": 1.0,
+               "generated_tokens": 10, "metric_calls": 2, "reflection_calls": 0}
+    items = [{"record_type": "item", "id": "a", "correct": True},
+             {"record_type": "item", "id": "b", "correct": False}]
+    (results / "base_gsm8k_s0.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in [summary, *items]) + "\n"
+    )
+    accuracy, cost = collect(results)
+    assert accuracy[0]["arm"] == "base" and cost[0]["metric_calls"] == 2

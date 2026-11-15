@@ -3,60 +3,13 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from t2lgepa.analysis import accuracy_table, cost_table, paired_bootstrap, summarize
-from t2lgepa.runner import read_summary
-
-
-def _item_files(results_dir: Path):
-    for path in sorted(results_dir.glob("*.jsonl")):
-        name = path.name
-        if name.endswith((".generations.jsonl", ".curve.jsonl")):
-            continue
-        yield path
-
-
-def collect(results_dir: Path) -> tuple[list[dict], list[dict]]:
-    accuracy, cost, items_by_arm = [], [], {}
-    for path in _item_files(results_dir):
-        text = path.read_text().splitlines()
-        if not text:
-            continue
-        summary = read_summary(path)
-        if summary.get("record_type") != "summary":
-            continue
-        items = [json.loads(line) for line in text[1:] if line.strip()]
-        score, lo, hi = summarize(items)
-        accuracy.append(
-            {"arm": summary["arm"], "task": summary["task"], "n": summary["n"],
-             "score": score, "lo": lo, "hi": hi}
-        )
-        cost.append({**summary, "score": score})
-        items_by_arm[(summary["arm"], summary["task"])] = {
-            item["id"]: bool(item["correct"]) for item in items
-        }
-
-    for row in accuracy:
-        base = items_by_arm.get(("base", row["task"]))
-        if row["arm"] == "base" or base is None:
-            row.update({"delta": None, "delta_lo": None, "delta_hi": None})
-            continue
-        mine = items_by_arm.get((row["arm"], row["task"]), {})
-        shared = sorted(set(mine) & set(base))
-        if not shared:
-            row.update({"delta": None, "delta_lo": None, "delta_hi": None})
-            continue
-        left = [mine[i] for i in shared]
-        right = [base[i] for i in shared]
-        delta = sum(left) / len(left) - sum(right) / len(right)
-        lo, hi = paired_bootstrap(left, right)
-        row.update({"delta": delta, "delta_lo": lo, "delta_hi": hi})
-    return accuracy, cost
+from t2lgepa.analysis import accuracy_table, cost_table
+from t2lgepa.tables import collect
 
 
 def main(argv: list[str] | None = None) -> int:
