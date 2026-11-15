@@ -17,6 +17,10 @@ dev = [
     "ruff>=0.5",
     "respx>=0.21",
 ]
+verify = [
+    "safetensors>=0.8.0",
+    "torch>=2.14.1",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -75,7 +75,9 @@ cost axis favours T2L decisively, and the accuracy axis favours neither.
 
 ## Caveats
 
-1. Weights are a public mirror, not the gated official repo.
+1. Weights come from `unsloth/gemma-2-2b-it`. **Verified bit-identical** to the official
+   `google/gemma-2-2b-it` (288/288 tensors, sha256 per tensor — see `verification.md`), so
+   the choice of repository does not affect any number here.
 2. The released adapter only behaves sensibly after forcing `use_rslora: false`
    (plain `alpha/r` scaling, which is what the paper's vLLM 0.5.4 stack applied). With the
    shipped flag the adapter collapses to 3–5%. This is recorded as a compatibility fix,
