@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Any
 
 from t2lgepa.client import VLLMClient
 from t2lgepa.config import Config
@@ -163,7 +164,7 @@ def run_gepa(
     reflection_calls: list[int] = []
 
     if optimizer is None:
-        from gepa import optimize as optimizer  # noqa: PLC0415
+        from gepa import optimize as optimizer
 
     started = time.time()
     result = optimizer(

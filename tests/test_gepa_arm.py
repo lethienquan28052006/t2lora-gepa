@@ -2,7 +2,6 @@ from types import SimpleNamespace
 
 import pytest
 
-from t2lgepa import gepa_arm
 from t2lgepa.client import Generation
 from t2lgepa.config import load_config
 from t2lgepa.data import Example
