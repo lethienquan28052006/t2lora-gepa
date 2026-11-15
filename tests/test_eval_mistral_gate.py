@@ -8,7 +8,7 @@ def _rows(deltas):
 
 
 def test_deltas_are_read_from_t2l_icl_rows():
-    rows, cost = _rows({"gsm8k": 0.03, "boolq": 0.10})
+    rows, _ = _rows({"gsm8k": 0.03, "boolq": 0.10})
     assert gate.deltas(rows) == {"gsm8k": 0.03, "boolq": 0.10}
 
 
