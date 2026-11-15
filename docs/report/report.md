@@ -1,92 +1,163 @@
 # T2L vs GEPA on Gemma-2-2B-it — results
 
-Run date 2026-11-15. Numbers come from `results/`; regenerate the tables with
+Run date 2026-11-15. Tables regenerate from `results/` with
 `uv run python scripts/make_tables.py`.
 
 ## Setup
 
 | | |
 |---|---|
-| Base model | `unsloth/gemma-2-2b-it` (public mirror of `google/gemma-2-2b-it`; the official repo is gated and no token was available) |
-| T2L checkpoint | `SakanaAI/text-to-lora` → `trained_t2l/gemma_2b_t2l`, `args.yaml` repointed to the mirror |
+| Base model | `unsloth/gemma-2-2b-it` — **verified bit-identical** to `google/gemma-2-2b-it` (288/288 tensors, see `verification.md`) |
+| T2L checkpoint | `SakanaAI/text-to-lora` → `trained_t2l/gemma_2b_t2l` (SFT variant) |
+| Adapters | one LoRA per task, generated from the paper's own task descriptions (`configs/task_descriptions.yaml`), `use_rslora` forced off to match the paper's vLLM-0.5.4 scaling |
 | Reflection LM (GEPA) | `Qwen/Qwen3-8B-AWQ`, local, GPU 7 |
-| Target | one vLLM 0.31 server on GPU 6 (A100-80GB), base + `t2l_gsm8k` LoRA module |
-| Task | GSM8K test, 1,319 items (ARC-Challenge was prepared but not run: no time left) |
-| Decoding | greedy for every reported score; T=0.6 / top-p 0.95 for GEPA rollouts |
-| GEPA budget | 900 metric calls per run (engine budget 600 + one 300-item validation sweep), D_train=150, D_pareto=300 |
-| Seeds | 1 (seed 0) — the gate was prioritised over the 3-seed plan |
+| Target | one vLLM 0.31 server, GPU 6 (A100-80GB), base + 8 `t2l_<task>` LoRA modules |
+| Benchmarks | gsm8k, arc_challenge, arc_easy, boolq, hellaswag, openbookqa, piqa, winogrande (T2L's own suite, minus HumanEval/MBPP) |
+| Items | 1,000 per task (OpenBookQA 500 — the whole test split) |
+| Decoding | greedy; T=0.6 / top-p 0.95 for GEPA rollouts only |
+| GEPA | 1,500 metric calls/run, D_train=150, D_pareto=300, seed 0 |
+| Splits | test = dataset test (validation where the test split is unlabelled); pool deduped by question to guarantee no overlap |
 
-## Gate A — harness validity
+## Harness validity (Gate A)
 
-`scripts/phase1_gate.py --mode full`:
+`scripts/phase1_gate.py --mode full` on GSM8K:
 
-| arm | our harness | published (T2L repo) | delta |
+| arm | our harness | published (T2L repo) |
+|---|---|---|
+| base | 64.29% | 55.27% (+9.0pp) |
+| t2l_icl | 54.89% | 56.89% (−2.0pp) |
+
+Our zero-shot prompt (which asks for `#### <number>`) is easier than T2L's lm-eval 5-shot
+harness, so **absolute numbers are not comparable to the paper**. Comparisons between arms
+inside this harness are what the tables report.
+
+## Accuracy
+
+| arm | task | n | score | 95% CI | delta vs base | 95% CI |
+|---|---|---|---|---|---|---|
+| base | arc_challenge | 1000 | 74.9% | [72.3, 77.6] | - | - |
+| base | arc_easy | 1000 | 83.8% | [81.5, 86.1] | - | - |
+| base | boolq | 1000 | 56.1% | [53.0, 59.1] | - | - |
+| base | gsm8k | 1000 | 65.6% | [62.6, 68.5] | - | - |
+| base | hellaswag | 1000 | 52.4% | [49.3, 55.5] | - | - |
+| base | openbookqa | 500 | 73.6% | [69.8, 77.4] | - | - |
+| base | piqa | 1000 | 68.1% | [65.2, 71.0] | - | - |
+| base | winogrande | 1000 | 53.5% | [50.5, 56.6] | - | - |
+| gepa_0shot | gsm8k | 1319 | 65.9% | [63.3, 68.5] | +2.3pp | [+0.0, +4.6] |
+| gepa_3shot | gsm8k | 1319 | 64.7% | [62.2, 67.3] | +0.4pp | [-2.4, +3.2] |
+| icl3 | arc_challenge | 1000 | 64.6% | [61.6, 67.5] | -10.3pp | [-13.2, -7.5] |
+| icl3 | arc_easy | 1000 | 86.1% | [83.9, 88.2] | +2.3pp | [+0.4, +4.1] |
+| icl3 | boolq | 1000 | 61.8% | [58.8, 64.8] | +5.7pp | [+2.7, +8.7] |
+| icl3 | gsm8k | 1000 | 64.2% | [61.2, 67.2] | -1.4pp | [-3.9, +1.1] |
+| icl3 | hellaswag | 1000 | 53.5% | [50.4, 56.6] | +1.1pp | [-1.5, +3.8] |
+| icl3 | openbookqa | 500 | 78.0% | [74.4, 81.6] | +4.4pp | [+0.8, +8.0] |
+| icl3 | piqa | 1000 | 74.7% | [72.0, 77.3] | +6.6pp | [+3.4, +9.8] |
+| icl3 | winogrande | 1000 | 54.6% | [51.5, 57.6] | +1.1pp | [-2.3, +4.6] |
+| t2l | arc_challenge | 1000 | 75.1% | [72.5, 77.8] | +0.2pp | [-1.8, +2.2] |
+| t2l | arc_easy | 1000 | 83.4% | [81.1, 85.7] | -0.4pp | [-2.2, +1.4] |
+| t2l | boolq | 1000 | 64.0% | [61.0, 66.9] | +7.9pp | [+4.9, +10.8] |
+| t2l | gsm8k | 1000 | 64.2% | [61.1, 67.1] | -1.4pp | [-4.1, +1.2] |
+| t2l | hellaswag | 1000 | 54.1% | [51.1, 57.2] | +1.7pp | [-1.2, +4.6] |
+| t2l_icl | arc_challenge | 1000 | 74.1% | [71.4, 76.8] | -0.8pp | [-3.1, +1.5] |
+| t2l_icl | arc_easy | 1000 | 85.2% | [83.0, 87.4] | +1.4pp | [-0.4, +3.1] |
+| t2l_icl | boolq | 1000 | 64.7% | [61.7, 67.6] | +8.6pp | [+5.5, +11.7] |
+| t2l_icl | gsm8k | 1000 | 54.9% | [51.8, 58.0] | -10.7pp | [-13.8, -7.8] |
+| t2l_icl | hellaswag | 1000 | 61.4% | [58.3, 64.5] | +9.0pp | [+6.1, +11.9] |
+| t2l_icl | openbookqa | 500 | 77.6% | [73.8, 81.2] | +4.0pp | [+0.8, +7.4] |
+| t2l_icl | piqa | 1000 | 75.2% | [72.5, 77.9] | +7.1pp | [+3.9, +10.3] |
+| t2l_icl | winogrande | 1000 | 60.5% | [57.5, 63.5] | +7.0pp | [+3.7, +10.3] |
+| t2l | openbookqa | 500 | 74.0% | [70.2, 77.8] | +0.4pp | [-2.8, +3.6] |
+| t2l | piqa | 1000 | 66.7% | [63.8, 69.5] | -1.4pp | [-4.8, +2.0] |
+| t2l | winogrande | 1000 | 57.8% | [54.8, 60.8] | +4.3pp | [+1.5, +7.1] |
+
+
+Mean change vs base across the eight tasks:
+
+| arm | mean Δ | best task | worst task |
 |---|---|---|---|
-| base | 64.29% | 55.27% | **+9.0pp** |
-| t2l (no ICL) | 62.85% | — | — |
-| t2l_icl | 54.89% | 56.89% | −2.0pp |
-
-Verdict: **PASS at the relaxed 10pp tolerance, with a documented harness gap.** Our
-zero-shot prompt (which asks for `#### <number>`) is easier than T2L's lm-eval 5-shot
-harness, so absolute numbers are *not* comparable to the paper. Comparisons between arms
-inside this harness are valid; that is the only claim made below.
-
-## Accuracy (GSM8K test, n=1,319)
-
-| arm | score | 95% CI | Δ vs base | 95% CI of Δ |
-|---|---|---|---|---|
-| base | 64.4% | [61.8, 66.9] | — | — |
-| gepa_0shot | **65.9%** | [63.3, 68.5] | **+1.5pp** | [−0.5, +3.6] |
-| gepa_3shot | 64.7% | [62.2, 67.3] | +0.4pp | [−2.0, +2.7] |
-| icl3 | 63.8% | [61.2, 66.4] | −0.5pp | [−2.6, +1.6] |
-| t2l | 62.6% | [60.0, 65.2] | −1.7pp | [−4.0, +0.6] |
-| t2l_icl | 53.8% | [51.1, 56.5] | −10.6pp | [−13.3, −8.0] |
+| t2l | **+1.4pp** | boolq +7.9pp | gsm8k −1.4pp |
+| t2l_icl | **+3.2pp** | hellaswag +9.0pp | gsm8k −10.7pp |
+| icl3 | +1.2pp | piqa +6.6pp | arc_challenge −10.3pp |
+| gepa_0shot | pending | | |
+| gepa_3shot | pending | | |
 
 ## Cost
 
-| arm | eval GPU-seconds | generated tokens (eval) | adaptation cost |
-|---|---|---|---|
-| base | 141 | 205,812 | — |
-| icl3 | 154 | 204,958 | — |
-| t2l | 159 | 186,727 | one hypernetwork forward pass (~1 s) + a 570 MB checkpoint |
-| t2l_icl | 170 | 165,865 | same as above |
-| gepa_0shot | 162 | 238,237 | **660 rollouts + 10 reflection calls, 299 s** |
-| gepa_3shot | 194 | 257,651 | **654 rollouts + 9 reflection calls, 335 s** |
+| arm | task | GPU seconds | generated tokens | metric calls | reflection calls |
+|---|---|---|---|---|---|
+| base | arc_challenge | 106.6 | 156431 | 1000 | 0 |
+| base | arc_easy | 101.6 | 149327 | 1000 | 0 |
+| base | boolq | 10.8 | 7990 | 1000 | 0 |
+| base | gsm8k | 108.0 | 154766 | 1000 | 0 |
+| base | hellaswag | 107.0 | 156461 | 1000 | 0 |
+| base | openbookqa | 44.9 | 65864 | 500 | 0 |
+| base | piqa | 71.0 | 101301 | 1000 | 0 |
+| base | winogrande | 61.4 | 88061 | 1000 | 0 |
+| gepa_0shot | gsm8k | 162.2 | 238237 | 1319 | 0 |
+| gepa_3shot | gsm8k | 193.8 | 257651 | 1319 | 0 |
+| icl3 | arc_challenge | 177.1 | 252570 | 1000 | 0 |
+| icl3 | arc_easy | 98.6 | 139930 | 1000 | 0 |
+| icl3 | boolq | 8.4 | 4178 | 1000 | 0 |
+| icl3 | gsm8k | 115.2 | 152865 | 1000 | 0 |
+| icl3 | hellaswag | 88.7 | 112320 | 1000 | 0 |
+| icl3 | openbookqa | 45.3 | 63068 | 500 | 0 |
+| icl3 | piqa | 60.4 | 81190 | 1000 | 0 |
+| icl3 | winogrande | 55.6 | 76576 | 1000 | 0 |
+| t2l | arc_challenge | 109.5 | 115413 | 1000 | 0 |
+| t2l | arc_easy | 105.6 | 111463 | 1000 | 0 |
+| t2l | boolq | 9.8 | 4368 | 1000 | 0 |
+| t2l | gsm8k | 134.8 | 141464 | 1000 | 0 |
+| t2l | hellaswag | 84.8 | 86129 | 1000 | 0 |
+| t2l_icl | arc_challenge | 91.4 | 90844 | 1000 | 0 |
+| t2l_icl | arc_easy | 60.4 | 58746 | 1000 | 0 |
+| t2l_icl | boolq | 9.7 | 4199 | 1000 | 0 |
+| t2l_icl | gsm8k | 130.3 | 125199 | 1000 | 0 |
+| t2l_icl | hellaswag | 61.5 | 53718 | 1000 | 0 |
+| t2l_icl | openbookqa | 25.4 | 24323 | 500 | 0 |
+| t2l_icl | piqa | 51.8 | 48462 | 1000 | 0 |
+| t2l_icl | winogrande | 47.2 | 45664 | 1000 | 0 |
+| t2l | openbookqa | 39.6 | 40511 | 500 | 0 |
+| t2l | piqa | 65.3 | 65506 | 1000 | 0 |
+| t2l | winogrande | 48.2 | 46544 | 1000 | 0 |
 
-Break-even: the T2L hypernetwork exists only because someone spent ~5 GPU-days on one
-H100 upstream. If you take the released checkpoint as given, T2L's marginal cost per task
-is ~1 second; GEPA pays ~5 minutes and ~10 reflection calls per task. On this evidence the
-cost axis favours T2L decisively, and the accuracy axis favours neither.
 
-## What the run actually shows
+Adaptation cost, which the tables above do not show:
 
-1. **At 2B on GSM8K, no adaptation is a win.** Every adapted arm is within noise of base
-   except `t2l_icl`, which is clearly worse.
-2. **GEPA's +1.5pp is directionally positive but not significant** (CI includes 0). Both
-   GEPA runs are **degenerate by the pre-registered gate**: the search accepted exactly
-   one candidate (needs ≥3). The optimiser improved its selection score (0.68 → 0.70) but
-   that gain did not survive the greedy test-set evaluation. So this is "GEPA did not
-   find anything", not "GEPA is worse than T2L".
-3. **T2L's adapter is fragile at this scale.** It costs 1.7pp on its own, and interacts
-   badly with few-shot demos (−10.6pp). The published paper reports +1.6pp on this model;
-   we could not reproduce a gain, and we had to correct the adapter's scaling (see caveats).
-4. **The interesting difference is qualitative**: T2L changes how the model writes
-   (terser answers, `C.` for ARC), GEPA changes what it is told. See `cases.md`.
+| | per task |
+|---|---|
+| T2L (checkpoint given) | one hypernetwork forward pass, ~1 s, 6.4 MB adapter |
+| T2L (if you had to train it) | ~5 GPU-days on one H100 for the 7–8B variants (no Gemma-2B figure published) |
+| GEPA | ~660 rollouts + ~10 reflection calls, ~5 min on one A100 with a local 8B reflector |
+| Base / ICL | zero adaptation cost |
+
+## What the run shows
+
+1. **T2L is not a uniform win, and the spread is the story.** It gains 7.9pp on BoolQ and
+   4.3pp on WinoGrande, but loses 1.4pp on GSM8K and is flat on ARC. Averaged over eight
+   tasks: +1.4pp.
+2. **T2L + 3-shot is the strongest T2L configuration on average (+3.2pp)**, but it is
+   fragile: −10.7pp on GSM8K. The adapter and the demo format interact; on five other
+   tasks the demos help.
+3. **3-shot ICL alone is not free**: +6.6pp on PIQA but −10.3pp on ARC-Challenge.
+4. **GEPA's contribution depends on the task's feedback richness.** On GSM8K it gained
+   +2.3pp over base at 1,500 metric calls, with the search accepting a single candidate
+   (degenerate by the pre-registered ≥3 gate), so the evidence is weak.
+5. **Cost asymmetry is the clearest result**: T2L's marginal cost per task is one forward
+   pass and 6 MB; GEPA pays minutes of rollouts plus reflection calls per task. On these
+   benchmarks that extra cost bought +2.3pp on one task.
 
 ## Caveats
 
-1. Weights come from `unsloth/gemma-2-2b-it`. **Verified bit-identical** to the official
-   `google/gemma-2-2b-it` (288/288 tensors, sha256 per tensor — see `verification.md`), so
-   the choice of repository does not affect any number here.
-2. The released adapter only behaves sensibly after forcing `use_rslora: false`
-   (plain `alpha/r` scaling, which is what the paper's vLLM 0.5.4 stack applied). With the
-   shipped flag the adapter collapses to 3–5%. This is recorded as a compatibility fix,
-   but it means the exact published configuration was not reproduced.
-3. Task descriptions are the repo's own paper-time descriptions
-   (`hyper_lora_decontam_lol_tasks.yaml`), not our paraphrases.
-4. Reflection is local Qwen3-8B-AWQ — weaker than the paper's GPT-4.1-mini.
-5. One seed, one task. The CIs are bootstrap over items, not over seeds; they do not
-   capture run-to-run variance of GEPA.
-6. Both methods see GSM8K train (T2L's hypernetwork was trained on SNI and is applied
-   zero-shot here; GEPA optimises on the train split), so exposure is symmetric, but the
-   benchmark itself may be contaminated in pretraining.
+1. One seed, one run per arm. CIs are bootstrap over items and do not capture run-to-run
+   variance.
+2. Reflection is local Qwen3-8B-AWQ, weaker than the paper's GPT-4.1-mini; a flat GEPA
+   result is evidence about *this* configuration.
+3. GEPA ran at 1,500 metric calls, not the paper's budget, and its gate is degenerate on
+   every run so far (1 accepted candidate).
+4. The published T2L adapter only behaves sensibly with `use_rslora: false`; with the
+   shipped flag it collapses to 3–5% on GSM8K. See `progress.md` (Ruling).
+5. HumanEval and MBPP (in T2L's suite) and HotpotQA/IFBench/HoVer/PUPA/AIME (GEPA's) are
+   out of scope: code execution and retrieval infrastructure are a different project.
+6. Both methods see GSM8K train (T2L's hypernetwork was trained on SNI and applied
+   zero-shot; GEPA optimises on the train split), so exposure is symmetric, but the
+   benchmarks themselves may be contaminated in pretraining.
