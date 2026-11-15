@@ -54,3 +54,19 @@ def test_reflect_cmd_uses_gpu7_model_and_port(cfg):
     assert cmd[cmd.index("--model") + 1] == cfg.reflection_model
     assert cmd[cmd.index("--port") + 1] == str(REFLECT_PORT)
     assert "--served-model-name" in cmd
+
+
+def test_reflection_server_starts_before_any_gepa_job(cfg):
+    jobs = plan_grid(cfg)
+    reflect_at = next(i for i, j in enumerate(jobs) if j.kind == "reflect")
+    first_gepa = next(i for i, j in enumerate(jobs) if j.arm.startswith("gepa"))
+    assert reflect_at < first_gepa
+
+
+def test_arm_dispatch_kinds():
+    from run_grid import arm_kind
+
+    assert arm_kind("base") == "run_arm"
+    assert arm_kind("gepa_3shot") == "gepa"
+    assert arm_kind("gepa_merge") == "unsupported"
+    assert arm_kind("gepa_noreflect") == "unsupported"

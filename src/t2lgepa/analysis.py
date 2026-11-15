@@ -37,15 +37,27 @@ def paired_bootstrap(
 
 
 def accuracy_table(rows: list[dict]) -> str:
-    lines = [
-        "| arm | task | n | score | 95% CI |",
-        "|---|---|---|---|---|",
-    ]
+    with_delta = any("delta" in row for row in rows)
+    header = "| arm | task | n | score | 95% CI |"
+    rule = "|---|---|---|---|---|"
+    if with_delta:
+        header += " delta vs base | 95% CI |"
+        rule += "---|---|"
+    lines = [header, rule]
     for row in rows:
-        lines.append(
+        line = (
             f"| {row['arm']} | {row['task']} | {row['n']} | {row['score'] * 100:.1f}% | "
             f"[{row['lo'] * 100:.1f}, {row['hi'] * 100:.1f}] |"
         )
+        if with_delta:
+            if row.get("delta") is None:
+                line += " - | - |"
+            else:
+                line += (
+                    f" {row['delta'] * 100:+.1f}pp | "
+                    f"[{row['delta_lo'] * 100:+.1f}, {row['delta_hi'] * 100:+.1f}] |"
+                )
+        lines.append(line)
     return "\n".join(lines)
 
 

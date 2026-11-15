@@ -143,3 +143,55 @@ def test_adapter_refuses_test_examples(tmp_path):
             seed_prompt=SEED_PROMPT, few_shot_block=None, train=[test_ex], pareto=[EX],
             optimizer=stub_optimizer, out_dir=tmp_path,
         )
+
+
+def test_budget_trip_returns_partial_result_and_records_curve(tmp_path):
+    from dataclasses import replace
+
+    cfg = replace(load_config("configs/base.yaml"), gepa_budget=5)
+
+    def exploding_optimizer(seed_candidate, trainset, valset, adapter, **kwargs):
+        batch = list(trainset) + list(valset)
+        while True:
+            adapter.evaluate(batch[:3], {"instruction": "x"})
+
+    result = run_gepa(
+        task="gsm8k", seed=0, cfg=cfg, client=FakeClient(), reflect_client=FakeReflect(),
+        seed_prompt=SEED_PROMPT, few_shot_block=None,
+        train=[EX, EX, EX], pareto=[EX, EX, EX],
+        optimizer=exploding_optimizer, out_dir=tmp_path,
+    )
+    assert result.partial is True
+    assert result.metric_calls <= cfg.gepa_budget
+    assert result.accepted_candidates == 0
+    assert (tmp_path / "gepa_gsm8k_s0.curve.jsonl").exists()
+
+
+def test_accepted_candidates_excludes_the_seed(tmp_path):
+    cfg = load_config("configs/base.yaml")
+    result = run_gepa(
+        task="gsm8k", seed=0, cfg=cfg, client=FakeClient(), reflect_client=FakeReflect(),
+        seed_prompt=SEED_PROMPT, few_shot_block=None, train=[EX], pareto=[EX, EX],
+        optimizer=stub_optimizer, out_dir=tmp_path,
+    )
+    assert result.accepted_candidates == 3  # stub returns 4 candidates incl. the seed
+
+
+def test_export_best_prompt_writes_the_file_the_demo_reads(tmp_path):
+    from t2lgepa.gepa_arm import export_best_prompt
+
+    result = GepaResult(
+        best_prompt="Best instruction here.", pareto_score=0.6, curve=[], metric_calls=10,
+        reflection_calls=2, wall_seconds=1.0, accepted_candidates=3,
+    )
+    path = export_best_prompt(result, tmp_path, task="gsm8k", seed=0)
+    assert path.name == "gepa_gsm8k_s0_best_prompt.txt"
+    assert "Best instruction here." in path.read_text()
+
+
+def test_prompt_fn_uses_the_optimised_instruction():
+    from t2lgepa.gepa_arm import prompt_fn_from
+
+    fn = prompt_fn_from("OPTIMISED RULES", None)
+    text = fn(EX)
+    assert "OPTIMISED RULES" in text and "2+2?" in text

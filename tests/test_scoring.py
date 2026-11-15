@@ -59,3 +59,16 @@ def test_arc_prompt_with_options_does_not_match_option_text():
 def test_normalize_number_rejects_non_numbers():
     assert normalize_number("18") == "18"
     assert normalize_number("abc") is None
+
+
+@pytest.mark.parametrize(
+    "text,expected",
+    [
+        ("#### 18 out of 30 correct", "18"),
+        ("#### $1{,}200$ in total", "1200"),
+        ("#### \\frac{1}{2} of the tank", "0.5"),
+        ("#### 1,200 (approx)", "1200"),
+    ],
+)
+def test_extract_takes_the_answer_not_the_last_number(text, expected):
+    assert extract_answer(text, "gsm8k") == expected

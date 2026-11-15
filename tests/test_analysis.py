@@ -72,3 +72,40 @@ def test_make_tables_script_writes_tables_from_results(tmp_path):
     main(["--results", str(results), "--out", str(out)])
     assert "base" in (out / "accuracy.md").read_text()
     assert "base" in (out / "cost.md").read_text()
+
+
+def test_accuracy_table_shows_paired_delta_vs_base():
+    rows = [
+        {"arm": "base", "task": "gsm8k", "score": 0.553, "lo": 0.525, "hi": 0.580, "n": 1319,
+         "delta": None, "delta_lo": None, "delta_hi": None},
+        {"arm": "t2l_icl", "task": "gsm8k", "score": 0.569, "lo": 0.541, "hi": 0.596, "n": 1319,
+         "delta": 0.016, "delta_lo": -0.005, "delta_hi": 0.037},
+    ]
+    table = accuracy_table(rows)
+    assert "vs base" in table and "+1.6" in table
+
+
+def test_make_tables_computes_paired_delta(tmp_path):
+    import json
+
+    from make_tables import main
+
+    results = tmp_path / "results"
+
+    def write(arm, correct):
+        results.mkdir(exist_ok=True)
+        summary = {"record_type": "summary", "arm": arm, "task": "gsm8k", "seed": 0,
+                   "fingerprint": "f", "n": len(correct), "score": sum(correct) / len(correct),
+                   "wall_seconds": 1.0, "generated_tokens": 10, "metric_calls": len(correct),
+                   "reflection_calls": 0}
+        items = [{"record_type": "item", "id": f"x{i}", "correct": bool(c)} for i, c in
+                 enumerate(correct)]
+        (results / f"{arm}_gsm8k_s0.jsonl").write_text(
+            "\n".join(json.dumps(r) for r in [summary, *items]) + "\n"
+        )
+
+    write("base", [True, False] * 25)
+    write("t2l_icl", [True, True, False, True] * 12 + [True, False] * 2)
+    out = tmp_path / "report"
+    main(["--results", str(results), "--out", str(out)])
+    assert "vs base" in (out / "accuracy.md").read_text()

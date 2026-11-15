@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import time
@@ -42,6 +43,14 @@ def _git_sha() -> str:
         return "unknown"
 
 
+def _dir_hash(path: Path) -> str:
+    digest = hashlib.sha1()
+    for file in sorted(p for p in path.rglob("*") if p.is_file()):
+        stat = file.stat()
+        digest.update(f"{file.name}:{stat.st_size}:{int(stat.st_mtime)}".encode())
+    return digest.hexdigest()[:12]
+
+
 def _paths(results_dir: Path, arm: str, task: str, seed: int) -> tuple[Path, Path]:
     stem = f"{arm}_{task}_s{seed}"
     return results_dir / f"{stem}.jsonl", results_dir / f"{stem}.generations.jsonl"
@@ -57,10 +66,13 @@ def run_arm(
     cfg: Config,
     limit: int | None = None,
     results_dir: str | Path | None = None,
+    adapter_path: str | Path | None = None,
 ) -> RunSummary:
     out_dir = Path(results_dir) if results_dir is not None else Path(cfg.results_dir)
     items_path, gens_path = _paths(out_dir, arm, task, seed)
     fingerprint = run_fingerprint(cfg)
+    if adapter_path is not None:
+        fingerprint = f"{fingerprint}-{_dir_hash(Path(adapter_path))}"
     key = RunKey(arm, task, seed, fingerprint)
 
     examples = load_task(task, "test", cache_dir=cfg.cache_dir)
@@ -68,7 +80,7 @@ def run_arm(
         examples = examples[:limit]
 
     finished = load_results(items_path).get(key)
-    if finished is not None and finished["n"] == len(examples):
+    if finished is not None and finished["n"] >= len(examples):
         return RunSummary(
             score=finished["score"],
             n=finished["n"],
@@ -78,6 +90,8 @@ def run_arm(
 
     done = load_items(items_path, key)
     missing = [ex for ex in examples if ex.id not in done]
+    prior = finished or {}
+
 
     started = time.time()
     tokens = 0
@@ -108,6 +122,8 @@ def run_arm(
             append_record(gens_path, {"id": ex.id, **record})
             done[ex.id] = record
     wall = time.time() - started
+    wall += float(prior.get("wall_seconds", 0.0))
+    tokens += int(prior.get("generated_tokens", 0))
 
     ordered = [done[ex.id] for ex in examples]
     summary = {

@@ -78,3 +78,35 @@ def test_demo_block_renders_several_examples():
     exs = load_task("gsm8k", "test", cache_dir="tests/fixtures")
     block = demo_block(exs[:2])
     assert block.count("Question:") == 2 and "####" in block
+
+
+def test_smaller_limit_does_not_shrink_an_existing_run(tmp_path, fake_client, cfg):
+    run_arm("base", "gsm8k", 0, fake_client, zero_shot, BASE, cfg, limit=3,
+            results_dir=tmp_path)
+    run_arm("base", "gsm8k", 0, fake_client, zero_shot, BASE, cfg, limit=1,
+            results_dir=tmp_path)
+    lines = (tmp_path / "base_gsm8k_s0.jsonl").read_text().splitlines()
+    assert json.loads(lines[0])["n"] == 3 and len(lines) == 4
+
+
+def test_resumed_run_accumulates_cost(tmp_path, fake_client, cfg):
+    run_arm("base", "gsm8k", 0, fake_client, zero_shot, BASE, cfg, limit=1,
+            results_dir=tmp_path)
+    run_arm("base", "gsm8k", 0, fake_client, zero_shot, BASE, cfg, limit=3,
+            results_dir=tmp_path)
+    rec = json.loads((tmp_path / "base_gsm8k_s0.jsonl").read_text().splitlines()[0])
+    assert rec["generated_tokens"] == 12  # 3 items x 4 tokens, across both segments
+
+
+def test_adapter_identity_changes_the_cache_key(tmp_path, fake_client, cfg):
+    lora_a = tmp_path / "a"
+    lora_a.mkdir()
+    (lora_a / "adapter_model.safetensors").write_bytes(b"weights-a")
+    lora_b = tmp_path / "b"
+    lora_b.mkdir()
+    (lora_b / "adapter_model.safetensors").write_bytes(b"weights-bb")
+    run_arm("t2l", "gsm8k", 0, fake_client, zero_shot, BASE, cfg, limit=3,
+            results_dir=tmp_path, adapter_path=lora_a)
+    run_arm("t2l", "gsm8k", 0, fake_client, zero_shot, BASE, cfg, limit=3,
+            results_dir=tmp_path, adapter_path=lora_b)
+    assert fake_client.n_calls == 6

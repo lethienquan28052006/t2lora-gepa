@@ -28,7 +28,12 @@ def _git_sha(repo: str) -> str:
         out = subprocess.run(
             ["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True, check=True
         )
-        return out.stdout.strip()
+        sha = out.stdout.strip()
+        status = subprocess.run(
+            ["git", "status", "--porcelain"], cwd=repo, capture_output=True, text=True,
+            check=True,
+        )
+        return f"{sha}-dirty" if status.stdout.strip() else sha
     except (OSError, subprocess.CalledProcessError):
         return "unknown"
 

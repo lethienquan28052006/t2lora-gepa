@@ -33,7 +33,8 @@ def test_make_splits_is_disjoint_and_deterministic(tmp_path):
     ]
     (tmp_path / "gsm8k_train.jsonl").write_text("\n".join(json.dumps(r) for r in rows))
     (tmp_path / "gsm8k_test.jsonl").write_text(
-        json.dumps({**rows[0], "id": "gsm8k:test:0", "split": "test"})
+        json.dumps({**rows[0], "id": "gsm8k:test:0", "split": "test",
+                    "question": "a question only in the test split"})
     )
 
     s1 = make_splits(seed=0, cache_dir=tmp_path)
@@ -59,7 +60,8 @@ def test_make_splits_differs_by_seed(tmp_path):
     ]
     (tmp_path / "gsm8k_train.jsonl").write_text("\n".join(json.dumps(r) for r in rows))
     (tmp_path / "gsm8k_test.jsonl").write_text(
-        json.dumps({**rows[0], "id": "gsm8k:test:0", "split": "test"})
+        json.dumps({**rows[0], "id": "gsm8k:test:0", "split": "test",
+                    "question": "a question only in the test split"})
     )
     assert [e.id for e in make_splits(seed=0, cache_dir=tmp_path).train] != [
         e.id for e in make_splits(seed=1, cache_dir=tmp_path).train
@@ -96,3 +98,12 @@ def test_map_row_arc_returns_four_options():
     )
     assert ex.answers == ["w", "x", "y", "z"]
     assert ex.answer == "C" and ex.rationale is None
+
+
+def test_leakage_detected_by_question_text_even_with_different_ids():
+    train = Example(id="gsm8k:train:1", task="gsm8k", question="Janet has 3 apples.",
+                    answers=[], answer="7", rationale=None, split="train")
+    test = Example(id="gsm8k:test:999", task="gsm8k", question="  janet has 3 apples. ",
+                   answers=[], answer="7", rationale=None, split="test")
+    with pytest.raises(LeakageError, match="question"):
+        assert_no_leakage(Splits(train=[train], pareto=[], test=[test]))

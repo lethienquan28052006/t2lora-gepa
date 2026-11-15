@@ -56,6 +56,7 @@ class GepaResult:
     reflection_calls: int
     wall_seconds: float
     accepted_candidates: int
+    partial: bool = False
 
 
 def _compose(instruction: str, example: Example, few_shot_block: str | None) -> str:
@@ -167,15 +168,22 @@ def run_gepa(
         from gepa import optimize as optimizer
 
     started = time.time()
-    result = optimizer(
+    partial = False
+    try:
+        result = optimizer(
         seed_candidate={"instruction": seed_prompt},
         trainset=train,
         valset=pareto,
         adapter=adapter,
         reflection_lm=_reflection_fn(reflect_client, reflection_calls),
-        max_metric_calls=cfg.gepa_budget,
-        seed=seed,
-    )
+            max_metric_calls=cfg.gepa_budget,
+            seed=seed,
+        )
+    except BudgetExhausted:
+        # The engine overshot its own counter; we stop here and report a partial run
+        # rather than fabricate a score for a search that did not finish.
+        result = None
+        partial = True
     wall = time.time() - started
 
     counts = list(getattr(result, "discovery_eval_counts", []) or [])
@@ -185,7 +193,9 @@ def run_gepa(
         for calls, value in curve:
             handle.write(json.dumps({"metric_calls": calls, "pareto_score": value}) + "\n")
 
-    best = getattr(result, "best_candidate", None) or {"instruction": seed_prompt}
+    best = (getattr(result, "best_candidate", None) if result else None) or {
+        "instruction": seed_prompt
+    }
     pareto_score = float(getattr(result, "best_val_aggregate_score", 0.0) or 0.0)
     if not pareto_score and scores:
         pareto_score = float(scores[int(max(range(len(scores)), key=lambda i: scores[i]))])
@@ -197,7 +207,8 @@ def run_gepa(
         metric_calls=metric.calls,
         reflection_calls=len(reflection_calls),
         wall_seconds=wall,
-        accepted_candidates=len(getattr(result, "candidates", []) or []),
+        accepted_candidates=max(0, len(getattr(result, "candidates", []) or []) - 1),
+        partial=partial,
     )
 
 
@@ -211,3 +222,17 @@ def assert_gate(result: GepaResult, baseline: float) -> None:
         raise GepaGateFailed(
             f"only {result.accepted_candidates} candidates were evaluated; the search was degenerate"
         )
+
+
+def export_best_prompt(result: GepaResult, out_dir: str | Path, task: str, seed: int) -> Path:
+    path = Path(out_dir) / f"gepa_{task}_s{seed}_best_prompt.txt"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(result.best_prompt + "\n", encoding="utf-8")
+    return path
+
+
+def prompt_fn_from(instruction: str, few_shot_block: str | None):
+    def build(example: Example) -> str:
+        return _compose(instruction, example, few_shot_block)
+
+    return build

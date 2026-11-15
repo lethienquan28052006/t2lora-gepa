@@ -25,10 +25,11 @@ def plan_grid(cfg: Config, extras: bool = False) -> list[Job]:
     for task in cfg.tasks:
         for arm in TARGET_ONLY_ARMS:
             jobs.append(Job(arm, task, 0, cfg.gpu_target, "target"))
+    jobs.append(Job("reflection-server", "all", 0, cfg.gpu_reflect, "reflect"))
+    for task in cfg.tasks:
         for seed in cfg.seeds:
             for arm in gepa_arms:
                 jobs.append(Job(arm, task, seed, cfg.gpu_target, "target"))
-    jobs.append(Job("reflection-server", "all", 0, cfg.gpu_reflect, "reflect"))
     return jobs
 
 

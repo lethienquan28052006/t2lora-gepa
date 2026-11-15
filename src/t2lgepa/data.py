@@ -121,3 +121,15 @@ def assert_no_leakage(splits: Splits) -> None:
     bad = sorted((train & test) | (pareto & test) | (train & pareto))
     if bad:
         raise LeakageError(f"ids appear in more than one split: {bad[:10]}")
+
+    def norm(question: str) -> str:
+        return " ".join(question.lower().split())
+
+    train_q = {norm(ex.question) for ex in splits.train}
+    pareto_q = {norm(ex.question) for ex in splits.pareto}
+    test_q = {norm(ex.question) for ex in splits.test}
+    shared_q = sorted((train_q & test_q) | (pareto_q & test_q) | (train_q & pareto_q))
+    if shared_q:
+        raise LeakageError(
+            f"the same question appears in more than one split: {[q[:60] for q in shared_q[:5]]}"
+        )

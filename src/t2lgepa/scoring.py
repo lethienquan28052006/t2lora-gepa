@@ -9,6 +9,7 @@ from t2lgepa.data import Example
 
 _GSM8K_MARKER = re.compile(r"####\s*([^\n]+)")
 _NUMBER_TOKEN = re.compile(r"-?\$?\d[\d,]*(?:\.\d+)?")
+_FRAC = re.compile(r"\\frac\{([-\d.]+)\}\{([-\d.]+)\}")
 _ARC_CUE = re.compile(r"(?:answer|option|choice)\s*(?:is|:|=)?\s*\(?([A-D])\)?", re.IGNORECASE)
 _ARC_PAREN = re.compile(r"\(([A-D])\)")
 _ARC_BARE = re.compile(r"(?<![A-Za-z])([A-D])(?![A-Za-z])")
@@ -30,10 +31,16 @@ def extract_answer(text: str, task: str) -> str | None:
     if not text or not text.strip():
         return None
     if task == "gsm8k":
-        for trailing in reversed(_GSM8K_MARKER.findall(text)):
-            tokens = _NUMBER_TOKEN.findall(trailing)
+        segments = text.split("####")[1:]
+        for trailing in reversed(segments):
+            trailing = trailing.split("\n")[0]
+            frac = _FRAC.search(trailing)
+            if frac:
+                return normalize_number(str(Decimal(frac.group(1)) / Decimal(frac.group(2))))
+            cleaned = trailing.replace("$", "").replace("{", "").replace("}", "")
+            tokens = _NUMBER_TOKEN.findall(cleaned)
             if tokens:
-                value = normalize_number(tokens[-1])
+                value = normalize_number(tokens[0])
                 if value is not None:
                     return value
         return None

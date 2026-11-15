@@ -32,3 +32,21 @@ def test_fingerprint_changes_when_decode_changes(tmp_path):
 
     cfg = load_config("configs/base.yaml")
     assert run_fingerprint(cfg) != run_fingerprint(replace(cfg, max_tokens=256))
+
+
+def test_fingerprint_changes_when_the_worktree_is_dirty(tmp_path):
+    import subprocess
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    env = ["-c", "user.email=a@b", "-c", "user.name=a"]
+    subprocess.run(["git", "init"], cwd=repo, capture_output=True, check=True)
+    (repo / "a.txt").write_text("x")
+    subprocess.run(["git", "add", "."], cwd=repo, capture_output=True, check=True)
+    subprocess.run(["git", *env, "commit", "-m", "init"], cwd=repo, capture_output=True,
+                   check=True)
+    cfg = load_config("configs/base.yaml")
+    clean = run_fingerprint(cfg, repo_root=repo)
+    (repo / "a.txt").write_text("y")
+    dirty = run_fingerprint(cfg, repo_root=repo)
+    assert clean != dirty
