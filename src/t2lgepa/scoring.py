@@ -43,6 +43,13 @@ def extract_answer(text: str, task: str) -> str | None:
                 value = normalize_number(tokens[0])
                 if value is not None:
                     return value
+        # lm-eval style fallback: no marker, so take the last number in the response.
+        tail = text.replace("$", "").replace("{", "").replace("}", "").split("\n")[-1]
+        tokens = _NUMBER_TOKEN.findall(tail) or _NUMBER_TOKEN.findall(
+            text.replace("$", "").replace("{", "").replace("}", "")
+        )
+        if tokens:
+            return normalize_number(tokens[-1])
         return None
     if task == "arc_challenge":
         for pattern in (_ARC_CUE, _ARC_PAREN, _ARC_BARE):

@@ -20,7 +20,7 @@ ARC_EX = Example(
         ("reasoning...\n#### 1,200", "1200"),
         ("blah #### -3.5.", "-3.5"),
         ("#### $720", "720"),
-        ("no marker at all 42", None),
+        ("no marker at all 42", "42"),
         ("", None),
     ],
 )
@@ -72,3 +72,17 @@ def test_normalize_number_rejects_non_numbers():
 )
 def test_extract_takes_the_answer_not_the_last_number(text, expected):
     assert extract_answer(text, "gsm8k") == expected
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("7", "7"),
+    ("She has 3 apples, buys 4, so 7.", "7"),
+    ("The final total is 1,200 dollars.", "1200"),
+    ("no digits here", None),
+])
+def test_extract_falls_back_to_the_last_number_like_lm_eval(text, expected):
+    assert extract_answer(text, "gsm8k") == expected
+
+
+def test_marker_still_wins_over_a_trailing_number():
+    assert extract_answer("#### 7 (checked against 30)", "gsm8k") == "7"
