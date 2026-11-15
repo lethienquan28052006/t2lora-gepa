@@ -5,6 +5,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-6}"
+export VLLM_USE_FLASHINFER_SAMPLER=0
 LORA_DIR="${LORA_DIR:-artifacts/t2l_loras/gsm8k}"
 PORT="${PORT:-8010}"
 MODEL="${MODEL:-unsloth/gemma-2-2b-it}"

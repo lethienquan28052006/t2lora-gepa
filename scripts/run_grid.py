@@ -178,7 +178,8 @@ def main(argv: list[str] | None = None) -> int:
                     reflect = VLLMClient(reflect_url, cfg.reflection_model, adapters=[])
                     reflect.assert_ready()
                     continue
-                env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(cfg.gpu_reflect)}
+                env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(cfg.gpu_reflect),
+                       "VLLM_USE_FLASHINFER_SAMPLER": "0"}
                 reflect_proc = subprocess.Popen(reflect_cmd(cfg), env=env)
                 wait_for(reflect_url)
                 reflect = VLLMClient(reflect_url, cfg.reflection_model, adapters=[])
