@@ -58,6 +58,8 @@ class Config:
     max_eval_items: int
     gate_tol_smoke_pp: float
     gate_tol_full_pp: float
+    vllm_bin: str = ".venv-serve/bin/vllm"
+    t2l_python: str = "vendor/text-to-lora/.venv-t2l/bin/python"
     expected: dict[str, float] = field(default_factory=dict)
 
     @classmethod

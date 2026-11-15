@@ -17,7 +17,7 @@ SURFACES = ("base", "t2l", "gepa")
 
 def build_serve_cmd(cfg: Config, lora_dir: Path, port: int = 8010, task: str = "gsm8k") -> list[str]:
     return [
-        str(VLLM_BIN),
+        cfg.vllm_bin,
         "serve",
         "--model",
         cfg.model_id,

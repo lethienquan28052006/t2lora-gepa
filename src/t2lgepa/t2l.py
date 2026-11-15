@@ -66,7 +66,7 @@ def _env(cfg: Config) -> dict[str, str]:
 def generate_lora(cfg: Config, task: str, out_dir: str) -> Path:
     description = describe_task(task)
     cmd = [
-        str(VENDOR_DIR.absolute() / ".venv-t2l/bin/python"),
+        cfg.t2l_python,
         "-m",
         "t2lgepa._t2l_shim",
         "scripts/generate_lora.py",

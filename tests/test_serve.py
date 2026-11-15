@@ -64,3 +64,10 @@ def test_format_report_shows_the_three_surfaces():
 def test_serve_cmd_uses_the_isolated_vllm_binary(cfg):
     cmd = build_serve_cmd(cfg, Path("/tmp/lora"), 8000)
     assert cmd[0].endswith(".venv-serve/bin/vllm")
+
+
+def test_serve_cmd_uses_configured_vllm_bin(cfg):
+    from dataclasses import replace
+
+    cfg2 = replace(cfg, vllm_bin="/data/x/venv/bin/vllm")
+    assert build_serve_cmd(cfg2, Path("/tmp/lora"), 8000)[0] == "/data/x/venv/bin/vllm"

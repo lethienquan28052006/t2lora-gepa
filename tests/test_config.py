@@ -56,3 +56,9 @@ def test_fingerprint_changes_when_the_worktree_is_dirty(tmp_path):
 def test_max_eval_items_is_capped():
     cfg = load_config("configs/base.yaml")
     assert cfg.max_eval_items == 1000
+
+
+def test_config_reads_binary_paths():
+    cfg = load_config("configs/base.yaml")
+    assert cfg.vllm_bin == ".venv-serve/bin/vllm"
+    assert cfg.t2l_python.endswith("bin/python")
