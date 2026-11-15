@@ -51,7 +51,7 @@ def run(cfg: Config, client: VLLMClient, limit: int, out_dir: Path) -> int:
         scores[task] = {}
         for arm in ARMS:
             model = adapter if arm.startswith("t2l") else cfg.model_id
-            prompt_fn = zero_shot if arm in ("base", "t2l") else (lambda ex: three_shot(ex, demos))
+            prompt_fn = zero_shot if arm in ("base", "t2l") else (lambda ex, demos=demos: three_shot(ex, demos))
             summary = run_arm(arm, task, cfg.seeds[0], client, prompt_fn, model, cfg,
                               limit=limit, results_dir=out_dir)
             scores[task][arm] = summary.score
