@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import subprocess
@@ -42,8 +43,10 @@ def _run(cmd: list[str], cfg: Config) -> str:
         check=False,
         env={
             **_env(cfg),
-            "CUDA_VISIBLE_DEVICES": str(cfg.gpu_target),
-            "PYTHONPATH": str((VENDOR_DIR / "src").absolute()),
+            "CUDA_VISIBLE_DEVICES": "" if os.environ.get("T2L_CPU") else str(cfg.gpu_target),
+            "PYTHONPATH": os.pathsep.join(
+                [str((VENDOR_DIR / "src").absolute()), str(Path(__file__).resolve().parents[1])]
+            ),
         },
     )
     elapsed = time.time() - started
@@ -57,8 +60,6 @@ def _run(cmd: list[str], cfg: Config) -> str:
 
 
 def _env(cfg: Config) -> dict[str, str]:
-    import os
-
     return dict(os.environ)
 
 
@@ -66,6 +67,8 @@ def generate_lora(cfg: Config, task: str, out_dir: str) -> Path:
     description = describe_task(task)
     cmd = [
         str(VENDOR_DIR.absolute() / ".venv-t2l/bin/python"),
+        "-m",
+        "t2lgepa._t2l_shim",
         "scripts/generate_lora.py",
         str(Path(cfg.t2l_checkpoint).resolve()),
         description,
