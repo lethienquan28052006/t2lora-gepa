@@ -106,3 +106,13 @@ def test_mcq_answer_letters_work_for_two_and_four_options():
                   answer="B", rationale=None, split="test")
     assert score(extract_answer("The best solution is (B).", "piqa"), two) is True
     assert extract_answer("Answer: B", "piqa") == "B"
+
+
+def test_five_letter_answers_are_supported():
+    from t2lgepa.data import Example
+
+    ex = Example(id="arc_challenge:test:0", task="arc_challenge", question="q",
+                 answers=["w", "x", "y", "z", "v"], answer="E", rationale=None,
+                 split="test")
+    assert extract_answer("The answer is (E).", "arc_challenge") == "E"
+    assert score("E", ex) is True

@@ -82,3 +82,9 @@ def test_gepa_arms_can_be_skipped(cfg):
     jobs = plan_grid(cfg, gepa=False)
     assert all(not j.arm.startswith("gepa") for j in jobs)
     assert {j.arm for j in jobs} == {"base", "icl3", "t2l", "t2l_icl"}
+
+
+def test_gepa_seeds_can_be_restricted(cfg):
+    jobs = plan_grid(cfg, gepa_seeds=[0])
+    gepa_jobs = [j for j in jobs if j.arm.startswith("gepa")]
+    assert gepa_jobs and {j.seed for j in gepa_jobs} == {0}

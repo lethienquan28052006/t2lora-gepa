@@ -135,3 +135,14 @@ def test_runner_caps_items_at_max_eval_items(tmp_path, fake_client, cfg):
     summary = run_arm("base", "gsm8k", 0, fake_client, zero_shot, BASE, capped,
                       results_dir=tmp_path)
     assert summary.n == 2
+
+
+def test_five_option_arc_question_gets_five_labels():
+    from t2lgepa.data import Example
+    from t2lgepa.prompts import zero_shot
+
+    ex = Example(id="arc_challenge:test:0", task="arc_challenge", question="q",
+                 answers=["w", "x", "y", "z", "v"], answer="E", rationale=None,
+                 split="test")
+    text = zero_shot(ex)
+    assert "(E) v" in text

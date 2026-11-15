@@ -19,7 +19,8 @@ class Job:
     kind: str
 
 
-def plan_grid(cfg: Config, extras: bool = False, gepa: bool = True) -> list[Job]:
+def plan_grid(cfg: Config, extras: bool = False, gepa: bool = True,
+              gepa_seeds: list[int] | None = None) -> list[Job]:
     jobs: list[Job] = []
     gepa_arms = GEPA_ARMS + (("gepa_noreflect", "gepa_merge") if extras else ())
     for task in cfg.tasks:
@@ -29,7 +30,7 @@ def plan_grid(cfg: Config, extras: bool = False, gepa: bool = True) -> list[Job]
         return jobs
     jobs.append(Job("reflection-server", "all", 0, cfg.gpu_reflect, "reflect"))
     for task in cfg.tasks:
-        for seed in cfg.seeds:
+        for seed in (gepa_seeds if gepa_seeds is not None else cfg.seeds):
             for arm in gepa_arms:
                 jobs.append(Job(arm, task, seed, cfg.gpu_target, "target"))
     return jobs

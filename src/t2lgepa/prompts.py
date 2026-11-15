@@ -17,7 +17,7 @@ MCQ_TASKS = ("arc_challenge", "arc_easy", "openbookqa", "hellaswag", "piqa", "wi
 
 
 def _options(example: Example) -> str:
-    labels = "ABCD"
+    labels = "ABCDEFGH"
     return "\n".join(
         f"({labels[i]}) {text}" for i, text in enumerate(example.answers)
     )

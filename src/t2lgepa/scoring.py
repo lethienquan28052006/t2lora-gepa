@@ -10,9 +10,9 @@ from t2lgepa.data import Example
 _GSM8K_MARKER = re.compile(r"####\s*([^\n]+)")
 _NUMBER_TOKEN = re.compile(r"-?\$?\d[\d,]*(?:\.\d+)?")
 _FRAC = re.compile(r"\\frac\{([-\d.]+)\}\{([-\d.]+)\}")
-_ARC_CUE = re.compile(r"(?:answer|option|choice)\s*(?:is|:|=)?\s*\(?([A-D])\)?", re.IGNORECASE)
-_ARC_PAREN = re.compile(r"\(([A-D])\)")
-_ARC_BARE = re.compile(r"(?<![A-Za-z])([A-D])(?![A-Za-z])")
+_ARC_CUE = re.compile(r"(?:answer|option|choice)\s*(?:is|:|=)?\s*\(?([A-H])\)?", re.IGNORECASE)
+_ARC_PAREN = re.compile(r"\(([A-H])\)")
+_ARC_BARE = re.compile(r"(?<![A-Za-z])([A-H])(?![A-Za-z])")
 _YES_NO = re.compile(r"\b(yes|no)\b")
 MCQ_TASKS = ("arc_challenge", "arc_easy", "openbookqa", "hellaswag", "piqa", "winogrande")
 
