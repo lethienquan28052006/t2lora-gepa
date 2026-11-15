@@ -181,3 +181,22 @@ def test_map_row_openbookqa():
                                                    "label": ["A", "B", "C", "D"]},
         "answerKey": "B"})
     assert ex.answers == ["O2", "CO2", "N2", "H2"] and ex.answer == "B"
+
+
+def test_split_name_falls_back_to_validation_for_label_less_test_splits():
+    from t2lgepa.data import split_name
+
+    assert split_name("hellaswag", "test") == "validation"
+    assert split_name("boolq", "test") == "validation"
+    assert split_name("gsm8k", "test") == "test"
+    assert split_name("arc_challenge", "train") == "train"
+
+
+def test_rebuild_cache_skips_rows_without_a_gold_answer(tmp_path, monkeypatch):
+    rows = [
+        {"sentence": "a _ b", "option1": "x", "option2": "y", "answer": ""},
+        {"sentence": "c _ d", "option1": "x", "option2": "y", "answer": "1"},
+    ]
+    monkeypatch.setattr("t2lgepa.data._download", lambda task, split: rows)
+    examples = load_task("winogrande", "test", cache_dir=tmp_path)
+    assert len(examples) == 1 and examples[0].answer == "A"

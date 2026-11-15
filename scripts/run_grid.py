@@ -149,13 +149,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--config", default="configs/base.yaml")
     parser.add_argument("--base-url", default="http://localhost:8010")
     parser.add_argument("--extras", action="store_true")
+    parser.add_argument("--no-gepa", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--no-reflect-server", action="store_true",
                         help="assume a reflection server is already running on port 8001")
     args = parser.parse_args(argv)
 
     cfg = load_config(args.config)
-    jobs = plan_grid(cfg, extras=args.extras)
+    jobs = plan_grid(cfg, extras=args.extras, gepa=not args.no_gepa)
     assert_one_job_per_gpu(jobs)
     for job in jobs:
         print(f"{job.kind:7s} gpu{job.gpu}  {job.arm:16s} {job.task:14s} seed={job.seed}")

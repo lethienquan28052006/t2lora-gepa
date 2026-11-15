@@ -7,7 +7,19 @@ import random
 from dataclasses import dataclass
 from pathlib import Path
 
-TASKS = ("gsm8k", "arc_challenge")
+TASKS = (
+    "gsm8k", "arc_challenge", "arc_easy", "boolq", "hellaswag", "openbookqa", "piqa",
+    "winogrande",
+)
+
+# Some benchmarks publish no labelled test split; their validation split is the test set.
+_VALIDATION_AS_TEST = ("boolq", "hellaswag", "piqa", "winogrande")
+
+
+def split_name(task: str, split: str) -> str:
+    if split == "test" and task in _VALIDATION_AS_TEST:
+        return "validation"
+    return split
 
 
 @dataclass(frozen=True)
@@ -128,7 +140,7 @@ def _download(task: str, split: str) -> list[dict]:
     elif task == "boolq":
         ds = load_dataset("google/boolq", split=split)
     elif task == "piqa":
-        ds = load_dataset("ybisk/piqa", split=split)
+        ds = load_dataset("lighteval/piqa", split=split)
     elif task == "winogrande":
         ds = load_dataset("allenai/winogrande", "winogrande_xl", split=split)
     elif task == "hellaswag":
@@ -162,9 +174,17 @@ def _read_cache(path: Path) -> list[Example] | None:
 
 
 def _rebuild_cache(task: str, split: str, path: Path) -> list[Example]:
-    rows = _download(task, split)
+    rows = _download(task, split_name(task, split))
     path.parent.mkdir(parents=True, exist_ok=True)
-    examples = [map_row(task, split, i, row) for i, row in enumerate(rows)]
+    examples = []
+    for index, row in enumerate(rows):
+        try:
+            example = map_row(task, split, index, row)
+        except (ValueError, KeyError, IndexError):
+            continue
+        if not str(example.answer).strip():
+            continue
+        examples.append(example)
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(
         "\n".join(json.dumps(ex.__dict__, ensure_ascii=False) for ex in examples) + "\n"

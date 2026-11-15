@@ -76,3 +76,9 @@ def test_reflect_cmd_uses_the_isolated_vllm_binary(cfg):
     from run_grid import reflect_cmd
 
     assert reflect_cmd(cfg)[0].endswith(".venv-serve/bin/vllm")
+
+
+def test_gepa_arms_can_be_skipped(cfg):
+    jobs = plan_grid(cfg, gepa=False)
+    assert all(not j.arm.startswith("gepa") for j in jobs)
+    assert {j.arm for j in jobs} == {"base", "icl3", "t2l", "t2l_icl"}
