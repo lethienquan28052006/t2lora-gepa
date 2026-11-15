@@ -1,0 +1,98 @@
+import json
+
+import pytest
+
+from t2lgepa.data import (
+    Example,
+    LeakageError,
+    Splits,
+    assert_no_leakage,
+    load_task,
+    make_splits,
+    map_row,
+)
+
+
+def test_load_task_maps_gsm8k_fields():
+    ex = load_task("gsm8k", "test", cache_dir="tests/fixtures")[0]
+    assert ex.task == "gsm8k" and ex.answer and ex.rationale and ex.split == "test"
+
+
+def test_make_splits_is_disjoint_and_deterministic(tmp_path):
+    rows = [
+        {
+            "id": f"gsm8k:train:{i}",
+            "task": "gsm8k",
+            "question": f"q{i}",
+            "answers": [],
+            "answer": str(i),
+            "rationale": None,
+            "split": "train",
+        }
+        for i in range(600)
+    ]
+    (tmp_path / "gsm8k_train.jsonl").write_text("\n".join(json.dumps(r) for r in rows))
+    (tmp_path / "gsm8k_test.jsonl").write_text(
+        json.dumps({**rows[0], "id": "gsm8k:test:0", "split": "test"})
+    )
+
+    s1 = make_splits(seed=0, cache_dir=tmp_path)
+    s2 = make_splits(seed=0, cache_dir=tmp_path)
+
+    assert [e.id for e in s1.train] == [e.id for e in s2.train]
+    assert len(s1.train) == 150 and len(s1.pareto) == 300
+    assert len({e.id for e in s1.train} | {e.id for e in s1.pareto}) == 450
+
+
+def test_make_splits_differs_by_seed(tmp_path):
+    rows = [
+        {
+            "id": f"gsm8k:train:{i}",
+            "task": "gsm8k",
+            "question": f"q{i}",
+            "answers": [],
+            "answer": str(i),
+            "rationale": None,
+            "split": "train",
+        }
+        for i in range(600)
+    ]
+    (tmp_path / "gsm8k_train.jsonl").write_text("\n".join(json.dumps(r) for r in rows))
+    (tmp_path / "gsm8k_test.jsonl").write_text(
+        json.dumps({**rows[0], "id": "gsm8k:test:0", "split": "test"})
+    )
+    assert [e.id for e in make_splits(seed=0, cache_dir=tmp_path).train] != [
+        e.id for e in make_splits(seed=1, cache_dir=tmp_path).train
+    ]
+
+
+def test_assert_no_leakage_raises_on_overlap():
+    ex = Example(
+        id="gsm8k:test:0", task="gsm8k", question="q", answers=[], answer="7",
+        rationale=None, split="test",
+    )
+    with pytest.raises(LeakageError) as err:
+        assert_no_leakage(Splits(train=[ex], pareto=[], test=[ex]))
+    assert "gsm8k:test:0" in str(err.value)
+
+
+def test_map_row_gsm8k_splits_rationale_and_answer():
+    ex = map_row("gsm8k", "train", 3, {"question": "1+1?", "answer": "1+1 = 2\n#### 2"})
+    assert ex.id == "gsm8k:train:3"
+    assert ex.answer == "2" and ex.rationale == "1+1 = 2"
+    assert ex.answers == []
+
+
+def test_map_row_arc_returns_four_options():
+    ex = map_row(
+        "arc_challenge",
+        "test",
+        0,
+        {
+            "question": "Which?",
+            "choices": {"label": ["A", "B", "C", "D"], "text": ["w", "x", "y", "z"]},
+            "answerKey": "C",
+        },
+    )
+    assert ex.answers == ["w", "x", "y", "z"]
+    assert ex.answer == "C" and ex.rationale is None

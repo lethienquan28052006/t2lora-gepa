@@ -1,0 +1,2 @@
+{"id": "arc_challenge:test:0", "task": "arc_challenge", "question": "Which gas do plants absorb?", "answers": ["Oxygen", "Carbon dioxide", "Nitrogen", "Hydrogen"], "answer": "B", "rationale": null, "split": "test"}
+{"id": "arc_challenge:test:1", "task": "arc_challenge", "question": "What force pulls objects to Earth?", "answers": ["Magnetism", "Friction", "Gravity", "Tension"], "answer": "C", "rationale": null, "split": "test"}
