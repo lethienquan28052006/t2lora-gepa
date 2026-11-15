@@ -29,7 +29,10 @@ def zero_shot(example: Example) -> str:
     if example.task in MCQ_TASKS:
         return f"{_ARC_RULES}\n\nQuestion: {example.question}\n{_options(example)}\nAnswer:"
     if example.task == "boolq":
-        return f"{_BOOLQ_RULES}\n\nQuestion: {example.question}\nAnswer:"
+        return (
+            f"{_BOOLQ_RULES}\n\nPassage: {example.rationale}\n\n"
+            f"Question: {example.question}\nAnswer:"
+        )
     raise ValueError(f"unknown task {example.task!r}")
 
 
@@ -39,6 +42,11 @@ def _demo(example: Example) -> str:
         if "####" not in answer:
             answer = f"{answer}\n#### {example.answer}"
         return f"Question: {example.question}\nAnswer: {answer}"
+    if example.task == "boolq":
+        return (
+            f"Passage: {example.rationale}\n\nQuestion: {example.question}\n"
+            f"Answer: {example.answer}"
+        )
     return f"Question: {example.question}\n{_options(example)}\nAnswer: The answer is ({example.answer})."
 
 
