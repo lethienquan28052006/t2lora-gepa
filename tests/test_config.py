@@ -62,3 +62,14 @@ def test_config_reads_binary_paths():
     cfg = load_config("configs/base.yaml")
     assert cfg.vllm_bin == ".venv-serve/bin/vllm"
     assert cfg.t2l_python.endswith("bin/python")
+
+
+def test_mistral_config():
+    cfg = load_config("configs/mistral.yaml")
+    assert cfg.model_id == "mistralai/Mistral-7B-Instruct-v0.2"
+    assert cfg.tasks == ("gsm8k", "arc_challenge", "boolq", "hellaswag", "winogrande")
+    assert cfg.gpu_target == 7 and cfg.seeds == (0,)
+    assert cfg.results_dir.startswith("/data/quan.lt/temp/")
+    assert cfg.cache_dir.startswith("/data/quan.lt/temp/")
+    assert cfg.vllm_bin.startswith("/data/quan.lt/temp/")
+    assert cfg.t2l_python.startswith("/data/quan.lt/temp/")
