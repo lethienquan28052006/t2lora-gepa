@@ -200,3 +200,21 @@ def test_rebuild_cache_skips_rows_without_a_gold_answer(tmp_path, monkeypatch):
     monkeypatch.setattr("t2lgepa.data._download", lambda task, split: rows)
     examples = load_task("winogrande", "test", cache_dir=tmp_path)
     assert len(examples) == 1 and examples[0].answer == "A"
+
+
+def test_make_splits_dedupes_repeated_questions_inside_the_pool(tmp_path):
+    import json as _json
+
+    rows = []
+    for i in range(500):
+        rows.append({"id": f"arc_easy:train:{i}", "task": "arc_easy",
+                     "question": "same question" if i in (3, 400) else f"q{i}",
+                     "answers": ["a", "b"], "answer": "A", "rationale": None,
+                     "split": "train"})
+    (tmp_path / "arc_easy_train.jsonl").write_text("\n".join(_json.dumps(r) for r in rows))
+    (tmp_path / "arc_easy_test.jsonl").write_text(_json.dumps(
+        {"id": "arc_easy:test:0", "task": "arc_easy", "question": "held out",
+         "answers": ["a", "b"], "answer": "A", "rationale": None, "split": "test"}))
+    splits = make_splits("arc_easy", cache_dir=tmp_path)
+    questions = [ex.question for ex in splits.train + splits.pareto]
+    assert len(questions) == len(set(questions)) == 450

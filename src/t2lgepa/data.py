@@ -202,8 +202,19 @@ def make_splits(
 ) -> Splits:
     pool = list(load_task(task, "train", cache_dir=cache_dir))
     test = load_task(task, "test", cache_dir=cache_dir)
-    test_questions = {" ".join(ex.question.lower().split()) for ex in test}
-    pool = [ex for ex in pool if " ".join(ex.question.lower().split()) not in test_questions]
+    def norm(question: str) -> str:
+        return " ".join(question.lower().split())
+
+    test_questions = {norm(ex.question) for ex in test}
+    pool = [ex for ex in pool if norm(ex.question) not in test_questions]
+    seen: set[str] = set()
+    unique_pool = []
+    for ex in pool:
+        key = norm(ex.question)
+        if key not in seen:
+            seen.add(key)
+            unique_pool.append(ex)
+    pool = unique_pool
     random.Random(seed).shuffle(pool)
     if len(pool) < n_train + n_pareto:
         raise ValueError(f"{task} train has {len(pool)} usable items, need {n_train + n_pareto}")

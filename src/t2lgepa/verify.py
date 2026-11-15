@@ -14,7 +14,7 @@ def _keys_and_hashes(files: list[Path]) -> dict[str, str]:
     out: dict[str, str] = {}
     for path in files:
         with safe_open(str(path), framework="pt") as handle:
-            for key in handle.keys():
+            for key in handle:
                 tensor = handle.get_tensor(key)
                 out[key] = hashlib.sha256(
                     tensor.contiguous().view(torch.uint8).numpy().tobytes()
