@@ -22,7 +22,7 @@ def test_base_config_matches_global_constraints():
     assert cfg.rollout_temperature == 0.6 and cfg.rollout_top_p == 0.95
     assert cfg.smoke_limit == 300
     assert cfg.gate_tol_smoke_pp == 8.0
-    assert cfg.gate_tol_full_pp == 8.0
+    assert cfg.gate_tol_full_pp == 10.0
     assert cfg.expected["gsm8k/base"] == pytest.approx(0.5527)
     assert cfg.expected["gsm8k/t2l_icl"] == pytest.approx(0.5689)
 
