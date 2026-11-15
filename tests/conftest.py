@@ -5,3 +5,12 @@ ROOT = Path(__file__).resolve().parents[1]
 for extra in (ROOT / "src", ROOT / "scripts"):
     if str(extra) not in sys.path:
         sys.path.insert(0, str(extra))
+
+import pytest
+
+from t2lgepa.config import load_config
+
+
+@pytest.fixture
+def cfg():
+    return load_config("configs/base.yaml")
