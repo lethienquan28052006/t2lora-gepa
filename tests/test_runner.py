@@ -69,3 +69,12 @@ def test_three_shot_includes_demos(cfg):
     text = three_shot(exs[0], exs[1:3])
     assert text.count("####") >= 2 and exs[0].question in text
     assert zero_shot(exs[0]) in text or exs[0].question in zero_shot(exs[0])
+
+
+def test_demo_block_renders_several_examples():
+    from t2lgepa.data import load_task
+    from t2lgepa.prompts import demo_block
+
+    exs = load_task("gsm8k", "test", cache_dir="tests/fixtures")
+    block = demo_block(exs[:2])
+    assert block.count("Question:") == 2 and "####" in block

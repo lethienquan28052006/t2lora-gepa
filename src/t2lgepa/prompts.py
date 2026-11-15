@@ -39,5 +39,8 @@ def _demo(example: Example) -> str:
 
 
 def three_shot(example: Example, demos: list[Example]) -> str:
-    block = "\n\n".join(_demo(d) for d in demos)
-    return f"{block}\n\n{zero_shot(example)}"
+    return f"{demo_block(demos)}\n\n{zero_shot(example)}"
+
+
+def demo_block(demos: list[Example]) -> str:
+    return "\n\n".join(_demo(d) for d in demos)
