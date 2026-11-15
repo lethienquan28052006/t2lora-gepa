@@ -14,7 +14,8 @@ def test_base_config_matches_global_constraints():
     cfg = load_config("configs/base.yaml")
     assert cfg.model_id == "unsloth/gemma-2-2b-it"
     assert cfg.t2l_checkpoint.endswith("gemma_2b_t2l")
-    assert cfg.tasks == ("gsm8k", "arc_challenge")
+    assert cfg.tasks == ("gsm8k", "arc_challenge", "arc_easy", "boolq",
+                        "hellaswag", "openbookqa", "piqa", "winogrande")
     assert cfg.seeds == (0, 1, 2)
     assert cfg.gepa_budget == 1500
     assert cfg.gpu_target == 6 and cfg.gpu_reflect == 7
@@ -50,3 +51,8 @@ def test_fingerprint_changes_when_the_worktree_is_dirty(tmp_path):
     (repo / "a.txt").write_text("y")
     dirty = run_fingerprint(cfg, repo_root=repo)
     assert clean != dirty
+
+
+def test_max_eval_items_is_capped():
+    cfg = load_config("configs/base.yaml")
+    assert cfg.max_eval_items == 1000

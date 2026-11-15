@@ -20,6 +20,7 @@ temperature: 0.0
 rollout_temperature: 0.6
 rollout_top_p: 0.95
 
+max_eval_items: 300
 smoke_limit: 300
 gate_tol_smoke_pp: 8.0
 gate_tol_full_pp: 10.0

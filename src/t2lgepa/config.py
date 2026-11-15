@@ -55,6 +55,7 @@ class Config:
     rollout_temperature: float
     rollout_top_p: float
     smoke_limit: int
+    max_eval_items: int
     gate_tol_smoke_pp: float
     gate_tol_full_pp: float
     expected: dict[str, float] = field(default_factory=dict)

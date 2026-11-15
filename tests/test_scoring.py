@@ -86,3 +86,23 @@ def test_extract_falls_back_to_the_last_number_like_lm_eval(text, expected):
 
 def test_marker_still_wins_over_a_trailing_number():
     assert extract_answer("#### 7 (checked against 30)", "gsm8k") == "7"
+
+
+def test_boolq_extracts_yes_no():
+    from t2lgepa.data import Example
+
+    ex = Example(id="boolq:test:0", task="boolq", question="q", answers=[],
+                 answer="yes", rationale=None, split="test")
+    assert extract_answer("Yes, that is correct.", "boolq") == "yes"
+    assert extract_answer("No.", "boolq") == "no"
+    assert score("yes", ex) is True
+    assert score("no", ex) is False
+
+
+def test_mcq_answer_letters_work_for_two_and_four_options():
+    from t2lgepa.data import Example
+
+    two = Example(id="piqa:test:0", task="piqa", question="q", answers=["a", "b"],
+                  answer="B", rationale=None, split="test")
+    assert score(extract_answer("The best solution is (B).", "piqa"), two) is True
+    assert extract_answer("Answer: B", "piqa") == "B"

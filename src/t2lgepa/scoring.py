@@ -13,6 +13,8 @@ _FRAC = re.compile(r"\\frac\{([-\d.]+)\}\{([-\d.]+)\}")
 _ARC_CUE = re.compile(r"(?:answer|option|choice)\s*(?:is|:|=)?\s*\(?([A-D])\)?", re.IGNORECASE)
 _ARC_PAREN = re.compile(r"\(([A-D])\)")
 _ARC_BARE = re.compile(r"(?<![A-Za-z])([A-D])(?![A-Za-z])")
+_YES_NO = re.compile(r"\b(yes|no)\b")
+MCQ_TASKS = ("arc_challenge", "arc_easy", "openbookqa", "hellaswag", "piqa", "winogrande")
 
 
 def normalize_number(s: str) -> str | None:
@@ -51,7 +53,10 @@ def extract_answer(text: str, task: str) -> str | None:
         if tokens:
             return normalize_number(tokens[-1])
         return None
-    if task == "arc_challenge":
+    if task == "boolq":
+        found = _YES_NO.findall(text.lower())
+        return found[-1] if found else None
+    if task in MCQ_TASKS:
         for pattern in (_ARC_CUE, _ARC_PAREN, _ARC_BARE):
             found = pattern.findall(text)
             if found:
@@ -67,6 +72,8 @@ def score(pred: str | None, example: Example) -> bool:
         left = normalize_number(str(pred))
         right = normalize_number(example.answer)
         return left is not None and right is not None and Decimal(left) == Decimal(right)
-    if example.task == "arc_challenge":
+    if example.task == "boolq":
+        return str(pred).strip().lower() == example.answer.strip().lower()
+    if example.task in MCQ_TASKS:
         return str(pred).strip().upper() == example.answer.strip().upper()
     raise ValueError(f"unknown task {example.task!r}")

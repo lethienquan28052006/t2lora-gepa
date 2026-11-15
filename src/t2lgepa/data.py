@@ -44,18 +44,68 @@ def map_row(task: str, split: str, index: int, row: dict) -> Example:
             rationale=rationale.strip() or None,
             split=split,
         )
-    if task == "arc_challenge":
+    if task in ("arc_challenge", "arc_easy"):
         labels = list(row["choices"]["label"])
         texts = list(row["choices"]["text"])
         answer = row["answerKey"]
         if answer not in labels and answer.isdigit():
             answer = labels[int(answer)]
         return Example(
-            id=f"arc_challenge:{split}:{index}",
+            id=f"{task}:{split}:{index}",
             task=task,
             question=row["question"],
             answers=texts,
             answer=answer,
+            rationale=None,
+            split=split,
+        )
+    if task == "boolq":
+        return Example(
+            id=f"{task}:{split}:{index}",
+            task=task,
+            question=row["question"],
+            answers=[],
+            answer="yes" if row["answer"] else "no",
+            rationale=row.get("passage"),
+            split=split,
+        )
+    if task == "piqa":
+        return Example(
+            id=f"{task}:{split}:{index}",
+            task=task,
+            question=row["goal"],
+            answers=[row["sol1"], row["sol2"]],
+            answer="AB"[int(row["label"])],
+            rationale=None,
+            split=split,
+        )
+    if task == "winogrande":
+        return Example(
+            id=f"{task}:{split}:{index}",
+            task=task,
+            question=row["sentence"],
+            answers=[row["option1"], row["option2"]],
+            answer="AB"[int(row["answer"]) - 1],
+            rationale=None,
+            split=split,
+        )
+    if task == "hellaswag":
+        return Example(
+            id=f"{task}:{split}:{index}",
+            task=task,
+            question=row["ctx"],
+            answers=[e.strip() for e in row["endings"]],
+            answer="ABCD"[int(row["label"])],
+            rationale=None,
+            split=split,
+        )
+    if task == "openbookqa":
+        return Example(
+            id=f"{task}:{split}:{index}",
+            task=task,
+            question=row["question_stem"],
+            answers=list(row["choices"]["text"]),
+            answer=row["answerKey"],
             rationale=None,
             split=split,
         )
@@ -73,6 +123,18 @@ def _download(task: str, split: str) -> list[dict]:
         ds = load_dataset("openai/gsm8k", "main", split=split)
     elif task == "arc_challenge":
         ds = load_dataset("allenai/ai2_arc", "ARC-Challenge", split=split)
+    elif task == "arc_easy":
+        ds = load_dataset("allenai/ai2_arc", "ARC-Easy", split=split)
+    elif task == "boolq":
+        ds = load_dataset("google/boolq", split=split)
+    elif task == "piqa":
+        ds = load_dataset("ybisk/piqa", split=split)
+    elif task == "winogrande":
+        ds = load_dataset("allenai/winogrande", "winogrande_xl", split=split)
+    elif task == "hellaswag":
+        ds = load_dataset("Rowan/hellaswag", split=split)
+    elif task == "openbookqa":
+        ds = load_dataset("allenai/openbookqa", "main", split=split)
     else:
         raise ValueError(f"unknown task {task!r}")
     return list(ds)

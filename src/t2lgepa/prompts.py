@@ -10,8 +10,10 @@ _GSM8K_RULES = (
 )
 _ARC_RULES = (
     "Choose the correct option. Show your reasoning, then write the final line as "
-    "'The answer is (X).' with X one of A, B, C, D."
+    "'The answer is (X).' with X one of the given letters."
 )
+_BOOLQ_RULES = "Read the passage and answer the question with 'yes' or 'no'."
+MCQ_TASKS = ("arc_challenge", "arc_easy", "openbookqa", "hellaswag", "piqa", "winogrande")
 
 
 def _options(example: Example) -> str:
@@ -24,8 +26,10 @@ def _options(example: Example) -> str:
 def zero_shot(example: Example) -> str:
     if example.task == "gsm8k":
         return f"{_GSM8K_RULES}\n\nQuestion: {example.question}\nAnswer:"
-    if example.task == "arc_challenge":
+    if example.task in MCQ_TASKS:
         return f"{_ARC_RULES}\n\nQuestion: {example.question}\n{_options(example)}\nAnswer:"
+    if example.task == "boolq":
+        return f"{_BOOLQ_RULES}\n\nQuestion: {example.question}\nAnswer:"
     raise ValueError(f"unknown task {example.task!r}")
 
 

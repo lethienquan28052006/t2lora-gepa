@@ -110,3 +110,28 @@ def test_adapter_identity_changes_the_cache_key(tmp_path, fake_client, cfg):
     run_arm("t2l", "gsm8k", 0, fake_client, zero_shot, BASE, cfg, limit=3,
             results_dir=tmp_path, adapter_path=lora_b)
     assert fake_client.n_calls == 6
+
+
+def test_zero_shot_handles_two_option_and_binary_tasks():
+    from t2lgepa.data import Example
+    from t2lgepa.prompts import zero_shot
+
+    piqa = Example(id="piqa:test:0", task="piqa", question="boil water",
+                   answers=["use a pot", "use a fridge"], answer="A", rationale=None,
+                   split="test")
+    text = zero_shot(piqa)
+    assert "(A) use a pot" in text and "(B) use a fridge" in text
+
+    bq = Example(id="boolq:test:0", task="boolq", question="Is the sky blue?",
+                 answers=[], answer="yes", rationale=None, split="test")
+    text_bq = zero_shot(bq).lower()
+    assert "yes" in text_bq and "no" in text_bq
+
+
+def test_runner_caps_items_at_max_eval_items(tmp_path, fake_client, cfg):
+    from dataclasses import replace
+
+    capped = replace(cfg, max_eval_items=2)
+    summary = run_arm("base", "gsm8k", 0, fake_client, zero_shot, BASE, capped,
+                      results_dir=tmp_path)
+    assert summary.n == 2

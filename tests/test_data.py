@@ -148,3 +148,36 @@ def test_make_splits_drops_train_items_that_duplicate_a_test_question(tmp_path):
     ))
     splits = make_splits(seed=0, cache_dir=tmp_path)
     assert all(ex.question != "duplicated question" for ex in splits.train + splits.pareto)
+
+
+def test_map_row_boolq_is_binary():
+    ex = map_row("boolq", "test", 0, {"question": "Is the sky blue?", "answer": True,
+                                      "passage": "context"})
+    assert ex.answer == "yes" and ex.answers == []
+
+
+def test_map_row_piqa_uses_two_options():
+    ex = map_row("piqa", "test", 0, {"goal": "boil water", "sol1": "a", "sol2": "b",
+                                     "label": 1})
+    assert ex.answers == ["a", "b"] and ex.answer == "B"
+
+
+def test_map_row_winogrande_uses_two_options():
+    ex = map_row("winogrande", "test", 0, {"sentence": "The _ is big.", "option1": "x",
+                                           "option2": "y", "answer": "2"})
+    assert ex.answers == ["x", "y"] and ex.answer == "B"
+
+
+def test_map_row_hellaswag_uses_four_endings():
+    ex = map_row("hellaswag", "validation", 0, {
+        "ctx": "A man is", "endings": ["running", "sitting", "eating", "sleeping"],
+        "label": "2"})
+    assert ex.answers[0] == "running" and ex.answer == "C"
+
+
+def test_map_row_openbookqa():
+    ex = map_row("openbookqa", "test", 0, {
+        "question_stem": "Which gas?", "choices": {"text": ["O2", "CO2", "N2", "H2"],
+                                                   "label": ["A", "B", "C", "D"]},
+        "answerKey": "B"})
+    assert ex.answers == ["O2", "CO2", "N2", "H2"] and ex.answer == "B"

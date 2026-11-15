@@ -75,7 +75,7 @@ def run_arm(
         fingerprint = f"{fingerprint}-{_dir_hash(Path(adapter_path))}"
     key = RunKey(arm, task, seed, fingerprint)
 
-    examples = load_task(task, "test", cache_dir=cfg.cache_dir)
+    examples = load_task(task, "test", cache_dir=cfg.cache_dir)[: cfg.max_eval_items]
     if limit is not None:
         examples = examples[:limit]
 
