@@ -195,3 +195,37 @@ def test_prompt_fn_uses_the_optimised_instruction():
     fn = prompt_fn_from("OPTIMISED RULES", None)
     text = fn(EX)
     assert "OPTIMISED RULES" in text and "2+2?" in text
+
+
+def test_adapter_exposes_propose_new_texts_for_the_engine():
+    from t2lgepa.gepa_arm import _Adapter
+
+    assert hasattr(_Adapter, "propose_new_texts")
+    assert _Adapter.propose_new_texts is None
+
+
+def test_run_gepa_disables_skip_perfect_score(tmp_path):
+    cfg = load_config("configs/base.yaml")
+    captured = {}
+
+    def spy(seed_candidate, trainset, valset, adapter, **kwargs):
+        captured.update(kwargs)
+        return stub_optimizer(seed_candidate, trainset, valset, adapter, **kwargs)
+
+    run_gepa("gsm8k", 0, cfg, FakeClient(), FakeReflect(), SEED_PROMPT, None,
+             train=[EX], pareto=[EX, EX], optimizer=spy, out_dir=tmp_path)
+    assert captured["skip_perfect_score"] is False
+
+
+def test_engine_budget_leaves_room_for_one_validation_sweep(tmp_path):
+    cfg = load_config("configs/base.yaml")
+    captured = {}
+
+    def spy(seed_candidate, trainset, valset, adapter, **kwargs):
+        captured["max_metric_calls"] = kwargs.get("max_metric_calls")
+        return stub_optimizer(seed_candidate, trainset, valset, adapter, **kwargs)
+
+    pareto = [EX, EX, EX]
+    run_gepa("gsm8k", 0, cfg, FakeClient(), FakeReflect(), SEED_PROMPT, None,
+             train=[EX], pareto=pareto, optimizer=spy, out_dir=tmp_path)
+    assert captured["max_metric_calls"] == cfg.gepa_budget - len(pareto)

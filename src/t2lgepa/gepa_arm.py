@@ -69,6 +69,10 @@ def _compose(instruction: str, example: Example, few_shot_block: str | None) -> 
 
 
 class _Adapter:
+    # GEPA treats this as optional, but the engine does `adapter.propose_new_texts is not
+    # None`, so the attribute has to exist. None means "use the built-in proposal".
+    propose_new_texts = None
+
     def __init__(
         self,
         client: VLLMClient,
@@ -176,7 +180,8 @@ def run_gepa(
         valset=pareto,
         adapter=adapter,
         reflection_lm=_reflection_fn(reflect_client, reflection_calls),
-            max_metric_calls=cfg.gepa_budget,
+            max_metric_calls=max(1, cfg.gepa_budget - len(pareto)),
+            skip_perfect_score=False,
             seed=seed,
         )
     except BudgetExhausted:
