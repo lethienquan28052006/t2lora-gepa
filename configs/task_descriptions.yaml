@@ -1,8 +1,8 @@
 gsm8k: >-
-  This task tests mathematical reasoning. Read the word problem, work through the
-  quantities step by step, and finish with the final numeric answer on its own line
-  as '#### <number>'.
+  This task challenges your problem-solving abilities through mathematical reasoning. You must
+  carefully read each scenario and systematically work through the data to compute the final
+  outcome.
 arc_challenge: >-
-  This task tests science knowledge in a multiple-choice format. Read the question and
-  the four options, reason about which one is scientifically correct, and finish with
-  'The answer is (X).' where X is one of A, B, C, D.
+  This task tests science knowledge in a multiple-choice format. Read the question and the four
+  options, reason about which one is scientifically correct, and finish with the answer as a
+  single letter A, B, C, or D.

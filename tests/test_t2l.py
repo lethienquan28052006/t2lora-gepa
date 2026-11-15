@@ -78,3 +78,16 @@ def test_command_uses_the_dedicated_t2l_interpreter(tmp_path, monkeypatch, cfg):
     generate_lora(cfg, "gsm8k", str(tmp_path / "loras"))
     assert captured["cmd"][0].endswith(".venv-t2l/bin/python")
     assert captured["cmd"][1] == "scripts/generate_lora.py"
+
+
+def test_generated_adapter_uses_alpha_over_r_scaling(tmp_path, monkeypatch, cfg):
+    import json
+
+    target = tmp_path / "loras" / "gsm8k"
+    target.mkdir(parents=True)
+    (target / "adapter_config.json").write_text(json.dumps({"use_rslora": True, "r": 8,
+                                                            "lora_alpha": 16}))
+    monkeypatch.setattr(t2l, "_run", lambda cmd, cfg: STDOUT.replace("{LORA_DIR}", str(target)))
+    generate_lora(cfg, "gsm8k", str(tmp_path / "loras"))
+    saved = json.loads((target / "adapter_config.json").read_text())
+    assert saved["use_rslora"] is False

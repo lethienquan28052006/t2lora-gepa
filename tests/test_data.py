@@ -131,3 +131,20 @@ def test_cache_write_is_atomic(tmp_path, monkeypatch):
     load_task("gsm8k", "test", cache_dir=tmp_path)
     assert not list(tmp_path.glob("*.tmp"))
     assert (tmp_path / "gsm8k_test.jsonl").read_text().endswith("\n")
+
+
+def test_make_splits_drops_train_items_that_duplicate_a_test_question(tmp_path):
+    import json as _json
+
+    rows = [
+        {"id": f"gsm8k:train:{i}", "task": "gsm8k", "question": f"unique q{i}", "answers": [],
+         "answer": str(i), "rationale": None, "split": "train"}
+        for i in range(500)
+    ]
+    rows[0]["question"] = "duplicated question"
+    (tmp_path / "gsm8k_train.jsonl").write_text("\n".join(_json.dumps(r) for r in rows))
+    (tmp_path / "gsm8k_test.jsonl").write_text(_json.dumps(
+        {**rows[1], "id": "gsm8k:test:0", "split": "test", "question": "duplicated question"}
+    ))
+    splits = make_splits(seed=0, cache_dir=tmp_path)
+    assert all(ex.question != "duplicated question" for ex in splits.train + splits.pareto)

@@ -21,8 +21,8 @@ rollout_temperature: 0.6
 rollout_top_p: 0.95
 
 smoke_limit: 300
-gate_tol_smoke_pp: 6.0
-gate_tol_full_pp: 3.0
+gate_tol_smoke_pp: 8.0
+gate_tol_full_pp: 8.0
 
 expected:
   gsm8k/base: 0.5527

@@ -82,4 +82,21 @@ def generate_lora(cfg: Config, task: str, out_dir: str) -> Path:
         shutil.copytree(source, dest, dirs_exist_ok=True)
     if not (dest / "adapter_config.json").exists():
         raise T2LError(f"{dest} has no adapter_config.json; the LoRA was not written correctly")
+    _force_alpha_over_r_scaling(dest / "adapter_config.json")
     return dest
+
+
+def _force_alpha_over_r_scaling(path: Path) -> None:
+    """Match the paper's inference stack.
+
+    The checkpoint ships `use_rslora: true`, but the released numbers were produced by
+    vLLM 0.5.4, which applies the plain `alpha / r` scaling. With rslora scaling the
+    adapter is ~2.8x too strong and the 2B model stops reasoning entirely (5% on GSM8K
+    vs 62% for the base model); with `alpha / r` it behaves as published.
+    """
+    import json
+
+    config = json.loads(path.read_text())
+    if config.get("use_rslora"):
+        config["use_rslora"] = False
+        path.write_text(json.dumps(config, indent=2))

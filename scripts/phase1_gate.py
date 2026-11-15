@@ -52,6 +52,17 @@ def main(argv: list[str] | None = None) -> int:
 
     expected = {arm: cfg.expected[f"{args.task}/{arm}"] for arm in ("base", "t2l_icl")}
     ok, messages = check_gate(observed, expected, tol)
+
+    # Internal sanity check, independent of the published numbers: the adapted arm must
+    # not collapse relative to base. This is what caught the marker/format bug.
+    gap_pp = abs(observed["t2l_icl"] - observed["base"]) * 100
+    if gap_pp > 15:
+        ok = False
+        messages.append(
+            f"t2l_icl is {gap_pp:.1f}pp away from base in our own harness; "
+            "the adapter is probably misapplied"
+        )
+
     print(f"\ngate [{args.mode}, tol ±{tol}pp]: {'PASS' if ok else 'FAIL'}")
     for message in messages:
         print(f"  - {message}")

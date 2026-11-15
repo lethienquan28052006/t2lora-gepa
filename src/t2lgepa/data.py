@@ -119,13 +119,16 @@ def make_splits(
     cache_dir: str = "data",
 ) -> Splits:
     pool = list(load_task(task, "train", cache_dir=cache_dir))
+    test = load_task(task, "test", cache_dir=cache_dir)
+    test_questions = {" ".join(ex.question.lower().split()) for ex in test}
+    pool = [ex for ex in pool if " ".join(ex.question.lower().split()) not in test_questions]
     random.Random(seed).shuffle(pool)
     if len(pool) < n_train + n_pareto:
-        raise ValueError(f"{task} train has {len(pool)} items, need {n_train + n_pareto}")
+        raise ValueError(f"{task} train has {len(pool)} usable items, need {n_train + n_pareto}")
     splits = Splits(
         train=pool[:n_train],
         pareto=pool[n_train : n_train + n_pareto],
-        test=load_task(task, "test", cache_dir=cache_dir),
+        test=test,
     )
     assert_no_leakage(splits)
     return splits
