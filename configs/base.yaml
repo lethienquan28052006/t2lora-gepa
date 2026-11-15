@@ -1,0 +1,31 @@
+model_id: google/gemma-2-2b-it
+t2l_checkpoint: trained_t2l/gemma_2b_t2l
+reflection_model: Qwen/Qwen3-14B-Instruct
+
+tasks:
+  - gsm8k
+  - arc_challenge
+
+seeds: [0, 1, 2]
+gepa_budget: 1500
+
+gpu_target: 6
+gpu_reflect: 7
+
+results_dir: results
+cache_dir: data
+
+max_tokens: 512
+temperature: 0.0
+rollout_temperature: 0.6
+rollout_top_p: 0.95
+
+smoke_limit: 300
+gate_tol_smoke_pp: 6.0
+gate_tol_full_pp: 3.0
+
+expected:
+  gsm8k/base: 0.5527
+  gsm8k/t2l_icl: 0.5689
+  arc_challenge/base: 0.7363
+  arc_challenge/t2l_icl: 0.7412
