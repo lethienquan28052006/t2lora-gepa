@@ -70,3 +70,9 @@ def test_arm_dispatch_kinds():
     assert arm_kind("gepa_3shot") == "gepa"
     assert arm_kind("gepa_merge") == "unsupported"
     assert arm_kind("gepa_noreflect") == "unsupported"
+
+
+def test_reflect_cmd_uses_the_isolated_vllm_binary(cfg):
+    from run_grid import reflect_cmd
+
+    assert reflect_cmd(cfg)[0].endswith(".venv-serve/bin/vllm")

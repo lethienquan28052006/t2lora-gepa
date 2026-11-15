@@ -61,3 +61,20 @@ def test_checkpoint_path_is_passed_absolutely(tmp_path, monkeypatch, cfg):
     generate_lora(cfg, "gsm8k", str(tmp_path / "loras"))
     ckpt_arg = captured["cmd"][captured["cmd"].index("scripts/generate_lora.py") + 1]
     assert ckpt_arg.startswith("/")
+
+
+def test_command_uses_the_dedicated_t2l_interpreter(tmp_path, monkeypatch, cfg):
+    captured = {}
+
+    def fake_run(cmd, cfg):
+        captured["cmd"] = cmd
+        captured["env_keys"] = True
+        target = tmp_path / "loras" / "gsm8k"
+        target.mkdir(parents=True)
+        (target / "adapter_config.json").write_text("{}")
+        return STDOUT.replace("{LORA_DIR}", str(target))
+
+    monkeypatch.setattr(t2l, "_run", fake_run)
+    generate_lora(cfg, "gsm8k", str(tmp_path / "loras"))
+    assert captured["cmd"][0].endswith(".venv-t2l/bin/python")
+    assert captured["cmd"][1] == "scripts/generate_lora.py"

@@ -10,16 +10,14 @@ from t2lgepa.config import Config
 from t2lgepa.t2l import lora_module_name
 
 BASE_URL_DEFAULT = "http://localhost:8000"
+REPO_ROOT = Path(__file__).resolve().parents[2]
+VLLM_BIN = REPO_ROOT / ".venv-serve/bin/vllm"
 SURFACES = ("base", "t2l", "gepa")
 
 
 def build_serve_cmd(cfg: Config, lora_dir: Path, port: int = 8000, task: str = "gsm8k") -> list[str]:
     return [
-        "uv",
-        "run",
-        "--with",
-        "vllm",
-        "vllm",
+        str(VLLM_BIN),
         "serve",
         "--model",
         cfg.model_id,

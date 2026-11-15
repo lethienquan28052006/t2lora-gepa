@@ -2,7 +2,8 @@ version = 1
 revision = 5
 requires-python = ">=3.10, <3.12"
 resolution-markers = [
-    "python_full_version >= '3.11' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine == 's390x' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine != 's390x' and sys_platform == 'win32'",
     "python_full_version >= '3.11' and sys_platform == 'emscripten'",
     "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'",
     "python_full_version < '3.11'",
@@ -114,7 +115,8 @@ name = "filelock"
 version = "4.2.10"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine == 's390x' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine != 's390x' and sys_platform == 'win32'",
     "python_full_version >= '3.11' and sys_platform == 'emscripten'",
     "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
@@ -200,7 +202,8 @@ name = "httpcore2"
 version = "2.16.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine == 's390x' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine != 's390x' and sys_platform == 'win32'",
     "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
@@ -251,7 +254,8 @@ name = "httpx2"
 version = "2.16.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine == 's390x' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine != 's390x' and sys_platform == 'win32'",
     "python_full_version >= '3.11' and sys_platform == 'emscripten'",
     "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
@@ -368,7 +372,8 @@ name = "numpy"
 version = "2.4.6"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine == 's390x' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine != 's390x' and sys_platform == 'win32'",
     "python_full_version >= '3.11' and sys_platform == 'emscripten'",
     "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
@@ -439,7 +444,8 @@ name = "pandas"
 version = "3.1.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine == 's390x' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine != 's390x' and sys_platform == 'win32'",
     "python_full_version >= '3.11' and sys_platform == 'emscripten'",
     "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
@@ -499,7 +505,8 @@ name = "pyarrow"
 version = "26.0.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine == 's390x' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine != 's390x' and sys_platform == 'win32'",
     "python_full_version >= '3.11' and sys_platform == 'emscripten'",
     "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
@@ -562,7 +569,8 @@ name = "python-dateutil"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version >= '3.11' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine == 's390x' and sys_platform == 'win32'",
+    "python_full_version >= '3.11' and platform_machine != 's390x' and sys_platform == 'win32'",
     "python_full_version >= '3.11' and sys_platform == 'emscripten'",
     "python_full_version >= '3.11' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]

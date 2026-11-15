@@ -40,7 +40,11 @@ def _run(cmd: list[str], cfg: Config) -> str:
         capture_output=True,
         text=True,
         check=False,
-        env={**_env(cfg), "CUDA_VISIBLE_DEVICES": str(cfg.gpu_target)},
+        env={
+            **_env(cfg),
+            "CUDA_VISIBLE_DEVICES": str(cfg.gpu_target),
+            "PYTHONPATH": str((VENDOR_DIR / "src").absolute()),
+        },
     )
     elapsed = time.time() - started
     log.write_text(
@@ -61,11 +65,7 @@ def _env(cfg: Config) -> dict[str, str]:
 def generate_lora(cfg: Config, task: str, out_dir: str) -> Path:
     description = describe_task(task)
     cmd = [
-        "uv",
-        "run",
-        "--project",
-        str(VENDOR_DIR),
-        "python",
+        str(VENDOR_DIR.absolute() / ".venv-t2l/bin/python"),
         "scripts/generate_lora.py",
         str(Path(cfg.t2l_checkpoint).resolve()),
         description,

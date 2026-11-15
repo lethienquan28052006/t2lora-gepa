@@ -18,8 +18,8 @@ print(generate_lora(cfg, "gsm8k", "artifacts/t2l_loras"))
 PY
 fi
 
-uv run --with vllm vllm serve \
-  --model google/gemma-2-2b-it \
+.venv-serve/bin/vllm serve \
+  --model unsloth/gemma-2-2b-it \
   --enable-lora --max-lora-rank 64 \
   --lora-modules "t2l_gsm8k=${LORA_DIR}" \
   --gpu-memory-utilization 0.85 --port "$PORT" &

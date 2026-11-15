@@ -59,3 +59,8 @@ def test_format_report_shows_the_three_surfaces():
     text = format_report(["2+2?"], {"base": ["4"], "t2l": ["#### 4"], "gepa": ["The answer is 4"]})
     assert "base" in text and "t2l" in text and "gepa" in text
     assert text.count("2+2?") == 1
+
+
+def test_serve_cmd_uses_the_isolated_vllm_binary(cfg):
+    cmd = build_serve_cmd(cfg, Path("/tmp/lora"), 8000)
+    assert cmd[0].endswith(".venv-serve/bin/vllm")

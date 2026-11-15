@@ -25,6 +25,7 @@ from t2lgepa.gepa_arm import (
 from t2lgepa.prompts import demo_block, three_shot, zero_shot
 from t2lgepa.runner import read_summary, run_arm
 from t2lgepa.schedule import Job, assert_one_job_per_gpu, plan_grid
+from t2lgepa.serve import VLLM_BIN
 from t2lgepa.t2l import lora_module_name
 
 REFLECT_PORT = 8001
@@ -38,11 +39,7 @@ SEED_INSTRUCTION = (
 
 def reflect_cmd(cfg: Config, port: int = REFLECT_PORT) -> list[str]:
     return [
-        "uv",
-        "run",
-        "--with",
-        "vllm",
-        "vllm",
+        str(VLLM_BIN),
         "serve",
         "--model",
         cfg.reflection_model,
