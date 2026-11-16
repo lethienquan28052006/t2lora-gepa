@@ -123,3 +123,12 @@ def test_gepa_only_skips_the_comparison_arms(cfg):
     jobs = plan_grid(cfg, gepa_only=True)
     assert not any(j.arm in ("base", "icl3", "t2l", "t2l_icl") for j in jobs)
     assert any(j.arm.startswith("gepa") for j in jobs)
+
+
+def test_gepa_seed_instruction_matches_the_task():
+    from run_grid import seed_instruction
+
+    assert "####" in seed_instruction("gsm8k")
+    assert "####" not in seed_instruction("hellaswag")
+    assert "option" in seed_instruction("hellaswag").lower()
+    assert "yes" in seed_instruction("boolq").lower()

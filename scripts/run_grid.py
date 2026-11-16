@@ -22,7 +22,7 @@ from t2lgepa.gepa_arm import (
     prompt_fn_from,
     run_gepa,
 )
-from t2lgepa.prompts import demo_block, three_shot, zero_shot
+from t2lgepa.prompts import demo_block, rules_for, three_shot, zero_shot
 from t2lgepa.reflect import resolve_key
 from t2lgepa.runner import read_summary, run_arm
 from t2lgepa.schedule import Job, assert_one_job_per_gpu, plan_grid
@@ -31,10 +31,9 @@ from t2lgepa.t2l import lora_module_name
 REFLECT_PORT = 8001
 GEPA_ARMS_SUPPORTED = ("gepa_3shot", "gepa_0shot")
 
-SEED_INSTRUCTION = (
-    "Solve the arithmetic word problem. Reason step by step and finish with the final "
-    "numeric answer on its own line as '#### <number>'."
-)
+def seed_instruction(task: str) -> str:
+    """The GEPA starting instruction, in the task's own answer format."""
+    return rules_for(task)
 
 
 def reflect_cmd(cfg: Config, port: int = REFLECT_PORT) -> list[str]:
@@ -108,7 +107,7 @@ def run_job(
     few_shot_block = demo_block(demos) if job.arm == "gepa_3shot" else None
     result = run_gepa(
         task=job.task, seed=job.seed, cfg=cfg, client=target, reflect_client=reflect,
-        seed_prompt=SEED_INSTRUCTION, few_shot_block=few_shot_block,
+        seed_prompt=seed_instruction(job.task), few_shot_block=few_shot_block,
         train=splits.train, pareto=splits.pareto, out_dir=results_dir,
     )
     export_best_prompt(result, results_dir, task=job.task, seed=job.seed)

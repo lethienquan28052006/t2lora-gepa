@@ -23,3 +23,14 @@ def test_boolq_demo_includes_the_passage_and_a_plain_answer():
 def test_boolq_three_shot_keeps_every_passage():
     prompt = three_shot(_boolq("test passage"), [_boolq("demo passage", "no")])
     assert "demo passage" in prompt and "test passage" in prompt
+
+
+def test_rules_for_every_supported_task():
+    from t2lgepa.prompts import rules_for
+
+    for task in ("gsm8k", "arc_challenge", "boolq", "hellaswag", "winogrande"):
+        rules = rules_for(task)
+        assert rules and rules[0].isupper()
+    assert "####" in rules_for("gsm8k")
+    assert "The answer is (X)" in rules_for("winogrande")
+    assert "yes" in rules_for("boolq")

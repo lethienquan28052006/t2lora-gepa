@@ -23,6 +23,21 @@ def _options(example: Example) -> str:
     )
 
 
+def rules_for(task: str) -> str:
+    """The instruction block for a task, independent of any single example.
+
+    GEPA optimises this text, so it must not carry a leftover answer format from another
+    task: a GSM8K-shaped seed on a multiple-choice task poisons the whole search.
+    """
+    if task == "gsm8k":
+        return _GSM8K_RULES
+    if task in MCQ_TASKS:
+        return _ARC_RULES
+    if task == "boolq":
+        return _BOOLQ_RULES
+    raise ValueError(f"unknown task {task!r}")
+
+
 def zero_shot(example: Example) -> str:
     if example.task == "gsm8k":
         return f"{_GSM8K_RULES}\n\nQuestion: {example.question}\nAnswer:"
