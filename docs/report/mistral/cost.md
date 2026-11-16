@@ -5,6 +5,11 @@
 | base | gsm8k | 334.1 | 244952 | 1000 | 0 |
 | base | hellaswag | 166.0 | 116299 | 1000 | 0 |
 | base | winogrande | 88.2 | 60665 | 1000 | 0 |
+| gepa_3shot | arc_challenge | 126.7 | 87649 | 1000 | 0 |
+| gepa_3shot | boolq | 75.1 | 43835 | 1000 | 0 |
+| gepa_3shot | gsm8k | 347.7 | 231184 | 1000 | 0 |
+| gepa_3shot | hellaswag | 120.0 | 72671 | 1000 | 0 |
+| gepa_3shot | winogrande | 108.8 | 62505 | 1000 | 0 |
 | icl3 | arc_challenge | 126.5 | 87897 | 1000 | 0 |
 | icl3 | boolq | 76.3 | 44309 | 1000 | 0 |
 | icl3 | gsm8k | 347.1 | 247366 | 1000 | 0 |

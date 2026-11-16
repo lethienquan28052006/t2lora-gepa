@@ -92,6 +92,41 @@ property of the generated adapter, and a reason the published numbers always com
 This is why the headline comparison is `t2l_icl`, and why `t2l` should be read as "the
 adapter without any format scaffold", not "the adapter's knowledge".
 
+## GEPA head-to-head
+
+Same five tasks, same 1,000 test items, same 3-shot scaffold, same greedy decoding. GEPA
+optimises the **instruction** (it may not touch the demo block); T2L changes the **weights**.
+Reflection LM: `deepseek-v4.1-flash` through the user's OpenAI-compatible provider.
+
+| task | base | icl3 | GEPA (`gepa_3shot`) | T2L (`t2l_icl`) | GEPA Δ | T2L Δ |
+|---|---|---|---|---|---|---|
+| gsm8k | 47.5 | 39.9 | 45.4 | **49.7** | −2.1 [−5.5, +1.3] | +2.2 [−1.2, +5.6] |
+| arc_challenge | 73.9 | **74.2** | 73.0 | 73.7 | −0.9 [−3.3, +1.5] | −0.2 [−2.8, +2.3] |
+| boolq | 82.4 | 83.4 | 83.3 | **86.1** | +0.9 [−0.7, +2.5] | +3.7 [+2.0, +5.5] |
+| hellaswag | 47.7 | 54.6 | 54.7 | **63.9** | +7.0 [+3.8, +10.3] | +16.2 [+12.9, +19.6] |
+| winogrande | 59.3 | 63.2 | 64.3 | **64.6** | +5.0 [+1.7, +8.2] | +5.3 [+2.0, +8.6] |
+| **mean** | | +0.9 | **+2.0** | **+5.4** | | |
+
+GEPA run accounting: 1,242–1,308 metric calls (rollouts), 7–18 reflection calls, 294–349 s
+wall per task. One run failed its own gate: on GSM8K the optimiser could not beat the seed
+program on D_pareto (0.457 vs 0.475), so it returned the seed instruction unchanged — it is
+reported as "found nothing", not as a result.
+
+**Reading the head-to-head:**
+
+1. **T2L wins on mean (+5.4 vs +2.0) and on 4 of 5 tasks.** Its one clear, large win is
+   HellaSwag, +16.2 vs GEPA's +7.0.
+2. **GEPA's gain on three of five tasks is its own demo block, not its instruction.** On
+   BoolQ and HellaSwag the optimised prompt lands within 0.1pp of plain `icl3`; the search
+   returned essentially the seed. Relative to `icl3` (the fair prompt-only baseline), GEPA
+   is +1.1pp on average.
+3. **Where prompts and weights tie is informative**: WinoGrande, 64.3 vs 64.6 — the +5pp
+   both methods earn there is available either way, which suggests it is a format/answer
+   convention gain rather than new capability.
+4. **Cost asymmetry is unchanged and larger than before**: T2L is one hypernetwork forward
+   pass and a 14MB adapter; GEPA is ~1,250 rollouts plus ~10 reflection calls per task,
+   roughly 5–6 minutes of GPU time, and it must be redone for every new task.
+
 ## Cost
 
 | arm | GPU seconds (5 tasks) | generated tokens |
@@ -107,6 +142,7 @@ Per task, adaptation cost:
 |---|---|
 | T2L adapter | 1 hypernetwork forward pass (~1 s), 14MB on disk |
 | Base / ICL | zero |
+| GEPA | ~1,250 rollouts + 7-18 reflection calls per task, 294-349s wall, plus API tokens for reflection |
 | Serving | one vLLM process, ~20GB VRAM at demo settings (see below) |
 
 The `t2l` arms generate roughly **3× fewer tokens** than base/ICL: the adapter answers
