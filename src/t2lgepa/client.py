@@ -37,7 +37,7 @@ class VLLMClient:
     ) -> None:
         base = base_url.rstrip("/")
         # Accept both "http://host:port" and an OpenAI-style "https://host/v1".
-        self.base_url = base[: -len("/v1")] if base.endswith("/v1") else base
+        self.base_url = base.removesuffix("/v1")
         self.model_id = model_id
         self.adapters = list(adapters)
         self.timeout_s = timeout_s
