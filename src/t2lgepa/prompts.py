@@ -38,6 +38,20 @@ def rules_for(task: str) -> str:
     raise ValueError(f"unknown task {task!r}")
 
 
+def question_block(example: Example) -> str:
+    """Everything after the instruction: the item itself, ending with the `Answer:` cue."""
+    if example.task == "gsm8k":
+        return f"Question: {example.question}\nAnswer:"
+    if example.task in MCQ_TASKS:
+        return f"Question: {example.question}\n{_options(example)}\nAnswer:"
+    if example.task == "boolq":
+        return (
+            f"Passage: {example.rationale}\n\n"
+            f"Question: {example.question}\nAnswer:"
+        )
+    raise ValueError(f"unknown task {example.task!r}")
+
+
 def zero_shot(example: Example) -> str:
     if example.task == "gsm8k":
         return f"{_GSM8K_RULES}\n\nQuestion: {example.question}\nAnswer:"

@@ -229,3 +229,24 @@ def test_engine_budget_leaves_room_for_one_validation_sweep(tmp_path):
     run_gepa("gsm8k", 0, cfg, FakeClient(), FakeReflect(), SEED_PROMPT, None,
              train=[EX], pareto=pareto, optimizer=spy, out_dir=tmp_path)
     assert captured["max_metric_calls"] == cfg.gepa_budget - len(pareto)
+
+
+def test_compose_renders_options_for_every_mcq_task():
+    from t2lgepa.data import Example
+    from t2lgepa.gepa_arm import _compose
+
+    ex = Example(id="hellaswag:train:0", task="hellaswag", question="A man is",
+                 answers=["running", "sleeping", "eating", "driving"], answer="A",
+                 rationale=None, split="train")
+    prompt = _compose("Pick one.", ex, None)
+    assert "(A) running" in prompt and "(D) driving" in prompt
+    assert prompt.rstrip().endswith("Answer:")
+
+
+def test_compose_renders_the_boolq_passage():
+    from t2lgepa.data import Example
+    from t2lgepa.gepa_arm import _compose
+
+    ex = Example(id="boolq:train:0", task="boolq", question="is it?", answers=[],
+                 answer="yes", rationale="the passage", split="train")
+    assert "the passage" in _compose("Answer yes or no.", ex, None)

@@ -13,7 +13,7 @@ from t2lgepa.client import VLLMClient
 from t2lgepa.config import Config
 from t2lgepa.data import Example
 from t2lgepa.feedback import build_feedback
-from t2lgepa.prompts import _options
+from t2lgepa.prompts import question_block
 from t2lgepa.scoring import extract_answer, score
 
 
@@ -60,11 +60,12 @@ class GepaResult:
 
 
 def _compose(instruction: str, example: Example, few_shot_block: str | None) -> str:
-    parts = [few_shot_block, instruction]
-    parts.append(f"Question: {example.question}")
-    if example.task == "arc_challenge":
-        parts.append(_options(example))
-    parts.append("Answer:")
+    """Demo block, then the optimised instruction, then the item in the task's own format.
+
+    The item block is shared with the non-GEPA arms, so GEPA sees exactly the same options,
+    passage and answer cue that `base`/`icl3` see; only the instruction text differs.
+    """
+    parts = [few_shot_block, instruction, question_block(example)]
     return "\n\n".join(part for part in parts if part)
 
 
