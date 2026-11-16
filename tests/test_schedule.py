@@ -101,3 +101,12 @@ def test_gepa_tasks_can_be_restricted(cfg):
     gepa_tasks = {j.task for j in jobs if j.arm.startswith("gepa")}
     assert gepa_tasks == {"boolq"}
     assert {j.task for j in jobs if j.arm == "base"} == set(cfg.tasks)
+
+
+def test_job_placement_follows_the_config_gpus(cfg):
+    from dataclasses import replace
+
+    cfg7 = replace(cfg, gpu_target=7)
+    jobs = plan_grid(cfg7, gepa=False)
+    assert_one_job_per_gpu(jobs)  # must not assume GPU 6
+    assert {j.gpu for j in jobs} == {7}

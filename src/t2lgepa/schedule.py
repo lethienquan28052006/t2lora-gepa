@@ -41,10 +41,18 @@ def plan_grid(cfg: Config, extras: bool = False, gepa: bool = True,
 
 
 def assert_one_job_per_gpu(jobs: list[Job]) -> None:
+    """All target jobs share one GPU, and no job shares a GPU with the reflection server.
+
+    The GPU ids come from the config, so a run can be pinned to any free device.
+    """
+    target_gpus = {job.gpu for job in jobs if job.kind == "target"}
+    reflect_gpus = {job.gpu for job in jobs if job.kind == "reflect"}
+    if len(target_gpus) > 1:
+        raise ValueError(f"target jobs span several gpus: {sorted(target_gpus)}")
+    if target_gpus & reflect_gpus:
+        raise ValueError(
+            f"target and reflection jobs share gpu {sorted(target_gpus & reflect_gpus)}"
+        )
     for job in jobs:
-        if job.kind == "target" and job.gpu != 6:
-            raise ValueError(f"target job {job} is not on gpu 6")
-        if job.kind == "reflect" and job.gpu != 7:
-            raise ValueError(f"reflect job {job} is not on gpu 7")
         if job.kind not in ("target", "reflect"):
             raise ValueError(f"{job} has an unknown kind")
