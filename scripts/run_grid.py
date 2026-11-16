@@ -23,6 +23,7 @@ from t2lgepa.gepa_arm import (
     run_gepa,
 )
 from t2lgepa.prompts import demo_block, three_shot, zero_shot
+from t2lgepa.reflect import resolve_key
 from t2lgepa.runner import read_summary, run_arm
 from t2lgepa.schedule import Job, assert_one_job_per_gpu, plan_grid
 from t2lgepa.t2l import lora_module_name
@@ -149,6 +150,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base-url", default="http://localhost:8010")
     parser.add_argument("--extras", action="store_true")
     parser.add_argument("--no-gepa", action="store_true")
+    parser.add_argument("--gepa-only", action="store_true",
+                        help="plan only GEPA jobs; comparison arms must already exist")
     parser.add_argument("--gepa-tasks", default=None,
                         help="comma separated tasks to optimise with GEPA")
     parser.add_argument("--gepa-arms", default=None,
@@ -165,7 +168,7 @@ def main(argv: list[str] | None = None) -> int:
     ga = args.gepa_arms.split(",") if args.gepa_arms else None
     gt = args.gepa_tasks.split(",") if args.gepa_tasks else None
     jobs = plan_grid(cfg, extras=args.extras, gepa=not args.no_gepa, gepa_seeds=gs,
-                     gepa_arms=ga, gepa_tasks=gt)
+                     gepa_arms=ga, gepa_tasks=gt, gepa_only=args.gepa_only)
     assert_one_job_per_gpu(jobs)
     for job in jobs:
         print(f"{job.kind:7s} gpu{job.gpu}  {job.arm:16s} {job.task:14s} seed={job.seed}")
@@ -181,6 +184,11 @@ def main(argv: list[str] | None = None) -> int:
 
     reflect_proc = None
     reflect = None
+    if cfg.reflection_base_url:
+        reflect = VLLMClient(cfg.reflection_base_url, cfg.reflection_model, adapters=[],
+                             api_key=resolve_key(cfg))
+        reflect.assert_ready()
+        print(f"reflection: {cfg.reflection_model} at {cfg.reflection_base_url}")
     try:
         for job in jobs:
             if job.kind == "reflect":

@@ -33,6 +33,7 @@ class VLLMClient:
         timeout_s: float = 600,
         max_workers: int = 8,
         backoff_s: float = 2.0,
+        api_key: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model_id = model_id
@@ -40,14 +41,18 @@ class VLLMClient:
         self.timeout_s = timeout_s
         self.max_workers = max_workers
         self.backoff_s = backoff_s
+        self.api_key = api_key
 
     @property
     def served_names(self) -> set[str]:
         return {self.model_id, *self.adapters}
 
+    def _headers(self) -> dict[str, str]:
+        return {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
+
     def assert_ready(self) -> None:
         try:
-            resp = httpx.get(f"{self.base_url}/v1/models", timeout=30)
+            resp = httpx.get(f"{self.base_url}/v1/models", timeout=30, headers=self._headers())
             resp.raise_for_status()
         except httpx.HTTPError as exc:
             raise GenerationError(f"server not reachable at {self.base_url}: {exc}") from exc
@@ -89,6 +94,7 @@ class VLLMClient:
                     f"{self.base_url}/v1/chat/completions",
                     json=payload,
                     timeout=self.timeout_s,
+                    headers=self._headers(),
                 )
                 resp.raise_for_status()
                 body = resp.json()

@@ -1,6 +1,8 @@
 model_id: mistralai/Mistral-7B-Instruct-v0.2
 t2l_checkpoint: /data/quan.lt/temp/t2l-mistral/t2l_ckpt/trained_t2l/mistral_7b_t2l
-reflection_model: Qwen/Qwen3-8B-AWQ
+reflection_model: deepseek-v4.1-flash
+reflection_base_url: https://hy-llm.bioturing.com/v1
+reflection_api_key_env: REFLECT_API_KEY
 
 tasks:
   - gsm8k
@@ -30,4 +32,9 @@ smoke_limit: 100
 gate_tol_smoke_pp: 15.0
 gate_tol_full_pp: 10.0
 
-expected: {}
+expected:
+  gsm8k/base: 0.475
+  arc_challenge/base: 0.739
+  boolq/base: 0.824
+  hellaswag/base: 0.477
+  winogrande/base: 0.593

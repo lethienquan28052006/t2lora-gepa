@@ -14,6 +14,7 @@ DECODE_FIELDS = (
     "model_id",
     "t2l_checkpoint",
     "reflection_model",
+    "reflection_base_url",
     "tasks",
     "seeds",
     "max_tokens",
@@ -58,6 +59,8 @@ class Config:
     max_eval_items: int
     gate_tol_smoke_pp: float
     gate_tol_full_pp: float
+    reflection_base_url: str = ""
+    reflection_api_key_env: str = "REFLECT_API_KEY"
     vllm_bin: str = ".venv-serve/bin/vllm"
     t2l_python: str = "vendor/text-to-lora/.venv-t2l/bin/python"
     expected: dict[str, float] = field(default_factory=dict)

@@ -65,3 +65,15 @@ def test_generate_preserves_input_order_with_concurrency(respx_mock):
     respx_mock.post(f"{URL}/v1/chat/completions").mock(side_effect=handler)
     out = VLLMClient(URL, BASE, adapters=[]).generate(["a", "b"] * 5, model=BASE)
     assert [g.text for g in out] == ["#### 18", "#### 7"] * 5
+
+
+def test_api_key_is_sent_as_bearer(respx_mock):
+    route = respx_mock.post(f"{URL}/v1/chat/completions").respond(json=CHAT_RESP)
+    client = VLLMClient(URL, "deepseek-v4.1-flash", adapters=[], api_key="sk-test")
+    client.generate(["q"], model="deepseek-v4.1-flash")
+    assert route.calls[0].request.headers["authorization"] == "Bearer sk-test"
+
+
+def test_external_model_is_accepted_when_served_by_the_endpoint(respx_mock):
+    respx_mock.get(f"{URL}/v1/models").respond(json={"data": [{"id": "deepseek-v4.1-flash"}]})
+    VLLMClient(URL, "deepseek-v4.1-flash", adapters=[]).assert_ready()

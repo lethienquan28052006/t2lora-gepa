@@ -110,3 +110,16 @@ def test_job_placement_follows_the_config_gpus(cfg):
     jobs = plan_grid(cfg7, gepa=False)
     assert_one_job_per_gpu(jobs)  # must not assume GPU 6
     assert {j.gpu for j in jobs} == {7}
+
+
+def test_external_reflector_needs_no_reflection_server_job(cfg):
+    from dataclasses import replace
+
+    jobs = plan_grid(replace(cfg, reflection_base_url="https://api.example/v1"))
+    assert not any(j.kind == "reflect" for j in jobs)
+
+
+def test_gepa_only_skips_the_comparison_arms(cfg):
+    jobs = plan_grid(cfg, gepa_only=True)
+    assert not any(j.arm in ("base", "icl3", "t2l", "t2l_icl") for j in jobs)
+    assert any(j.arm.startswith("gepa") for j in jobs)
