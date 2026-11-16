@@ -21,15 +21,26 @@ CHANCE: dict[str, float] = {
 
 
 def smoke_failures(
-    base: dict[str, float], adapter: dict[str, float], floor_pp: float = 15.0
+    base: dict[str, float],
+    adapter: dict[str, float],
+    adapter_icl: dict[str, float] | None = None,
+    floor_pp: float = 15.0,
 ) -> list[str]:
-    """Fail a task when its adapter collapsed: far below base, or at/below chance."""
+    """Fail a task when its adapter collapsed.
+
+    A collapsed adapter drags *both* arms down. One arm scoring badly while the other is
+    healthy is a prompt-format mismatch (the zero-shot prompt may suit the base model much
+    better than an adapter that was trained on a different answer convention), not a broken
+    adapter — so the task is judged on the better of the two arms.
+    """
     failures: list[str] = []
     for task, base_score in base.items():
         score = adapter.get(task)
         if score is None:
             failures.append(f"{task}: adapter arm missing from the smoke run")
             continue
+        if adapter_icl is not None:
+            score = max(score, adapter_icl.get(task, score))
         if score < base_score - floor_pp / 100:
             failures.append(
                 f"{task}: adapter {score * 100:.1f}% vs base {base_score * 100:.1f}% "

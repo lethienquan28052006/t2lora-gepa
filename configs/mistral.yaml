@@ -17,7 +17,7 @@ gpu_reflect: 7
 
 results_dir: /data/quan.lt/temp/t2l-mistral/results
 cache_dir: /data/quan.lt/temp/t2l-mistral/data
-vllm_bin: /data/quan.lt/temp/t2l-mistral/venv/bin/vllm
+vllm_bin: .venv-serve/bin/vllm
 t2l_python: /data/quan.lt/temp/t2l-mistral/venv-t2l/bin/python
 
 max_tokens: 512

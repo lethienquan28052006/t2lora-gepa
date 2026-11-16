@@ -71,5 +71,5 @@ def test_mistral_config():
     assert cfg.gpu_target == 7 and cfg.seeds == (0,)
     assert cfg.results_dir.startswith("/data/quan.lt/temp/")
     assert cfg.cache_dir.startswith("/data/quan.lt/temp/")
-    assert cfg.vllm_bin.startswith("/data/quan.lt/temp/")
+    assert cfg.vllm_bin.endswith("bin/vllm")
     assert cfg.t2l_python.startswith("/data/quan.lt/temp/")

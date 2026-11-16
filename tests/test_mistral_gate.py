@@ -33,3 +33,17 @@ def test_chance_by_task_shape():
     assert CHANCE["boolq"] == 0.5
     assert CHANCE["arc_challenge"] == 0.25
     assert CHANCE["gsm8k"] == 0.0
+
+
+def test_adapter_alive_if_either_arm_is_healthy():
+    base = {"winogrande": 0.65}
+    zero = {"winogrande": 0.39}
+    with_demos = {"winogrande": 0.71}
+    assert smoke_failures(base, zero, with_demos) == []
+
+
+def test_both_arms_low_means_collapsed():
+    base = {"winogrande": 0.65}
+    zero = {"winogrande": 0.30}
+    with_demos = {"winogrande": 0.32}
+    assert len(smoke_failures(base, zero, with_demos)) == 1

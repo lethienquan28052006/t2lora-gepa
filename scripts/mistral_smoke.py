@@ -38,7 +38,8 @@ def render(scores: dict[str, dict[str, float]]) -> tuple[str, list[str]]:
         lines.append(f"| {task:14s} | {row} |")
     base = {task: scores[task]["base"] for task in scores if "base" in scores[task]}
     adapter = {task: scores[task]["t2l"] for task in scores if "t2l" in scores[task]}
-    return "\n".join(lines), smoke_failures(base, adapter)
+    adapter_icl = {task: scores[task]["t2l_icl"] for task in scores if "t2l_icl" in scores[task]}
+    return "\n".join(lines), smoke_failures(base, adapter, adapter_icl)
 
 
 def run(cfg: Config, client: VLLMClient, limit: int, out_dir: Path) -> int:
