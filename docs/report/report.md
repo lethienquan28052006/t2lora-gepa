@@ -3,6 +3,11 @@
 Run date 2026-11-15. Tables regenerate from `results/` with
 `uv run python scripts/make_tables.py`.
 
+> **Later run, different model.** The Mistral-7B-Instruct-v0.2 T2L-only results are in
+> [`mistral/report.md`](mistral/report.md) (2026-11-16, 5 tasks × 4 arms, GPU 7). They are
+> not comparable to the tables below: different model, different harness fixes, and the
+> BoolQ prompt here omits the passage (see that report's caveat 4).
+
 ## Setup
 
 | | |
