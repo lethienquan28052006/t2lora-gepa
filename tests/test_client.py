@@ -77,3 +77,10 @@ def test_api_key_is_sent_as_bearer(respx_mock):
 def test_external_model_is_accepted_when_served_by_the_endpoint(respx_mock):
     respx_mock.get(f"{URL}/v1/models").respond(json={"data": [{"id": "deepseek-v4.1-flash"}]})
     VLLMClient(URL, "deepseek-v4.1-flash", adapters=[]).assert_ready()
+
+
+def test_base_url_already_ending_in_v1_is_not_doubled(respx_mock):
+    route = respx_mock.get("https://api.example/v1/models").respond(
+        json={"data": [{"id": "deepseek-v4.1-flash"}]})
+    VLLMClient("https://api.example/v1", "deepseek-v4.1-flash", adapters=[]).assert_ready()
+    assert route.called
