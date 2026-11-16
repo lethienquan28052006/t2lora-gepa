@@ -22,6 +22,35 @@ def disable_flash_attn(module: ModuleType) -> None:
     fn.__defaults__ = tuple(defaults)
 
 
+def filter_peft_config(config: dict, allowed: set[str]) -> dict:
+    """Drop keys the installed (older) peft does not accept.
+
+    The released checkpoints were saved with a newer peft, whose `adapter_config.json`
+    carries fields such as `corda_config` and `megatron_config`. Older peft refuses them
+    with a TypeError even though every dropped field is inert for inference.
+    """
+    return {key: value for key, value in config.items() if key in allowed}
+
+
+def tolerate_newer_peft_configs() -> None:
+    import inspect
+
+    import peft
+    from peft import LoraConfig
+
+    allowed = set(inspect.signature(LoraConfig.__init__).parameters)
+    original = peft.get_peft_config
+
+    def wrapper(config, *args, **kwargs):
+        if isinstance(config, dict):
+            config = filter_peft_config(config, allowed)
+        return original(config, *args, **kwargs)
+
+    peft.get_peft_config = wrapper
+    if hasattr(peft, "mapping"):
+        peft.mapping.get_peft_config = wrapper
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv:
@@ -30,6 +59,7 @@ def main(argv: list[str] | None = None) -> int:
     from hyper_llm_modulator.utils import model_loading
 
     disable_flash_attn(model_loading)
+    tolerate_newer_peft_configs()
 
     script, *rest = argv
     sys.argv = [script, *rest]

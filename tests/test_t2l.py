@@ -106,3 +106,12 @@ def test_cpu_shim_disables_flash_attention_default():
     stub = SimpleNamespace(get_model_and_tokenizer=get_model_and_tokenizer)
     disable_flash_attn(stub)
     assert stub.get_model_and_tokenizer.__defaults__[0] is False
+
+
+def test_filter_peft_config_drops_keys_the_installed_peft_rejects():
+    from t2lgepa._t2l_shim import filter_peft_config
+
+    saved = {"peft_type": "LORA", "r": 8, "lora_alpha": 16, "corda_config": None,
+             "eva_config": None, "megatron_config": None}
+    allowed = {"peft_type", "r", "lora_alpha"}
+    assert filter_peft_config(saved, allowed) == {"peft_type": "LORA", "r": 8, "lora_alpha": 16}
