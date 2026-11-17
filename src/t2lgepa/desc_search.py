@@ -151,6 +151,8 @@ class DescriptionAdapter:
         name, path = self.make_adapter(description)
         if name != self.current:
             self.registry.load(name, path)
+            if hasattr(self.client, "register"):
+                self.client.register(name)
             self.current = name
         return name
 

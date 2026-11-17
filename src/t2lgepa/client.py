@@ -40,6 +40,7 @@ class VLLMClient:
         self.base_url = base.removesuffix("/v1")
         self.model_id = model_id
         self.adapters = list(adapters)
+        self._registered: set[str] = set()
         self.timeout_s = timeout_s
         self.max_workers = max_workers
         self.backoff_s = backoff_s
@@ -47,7 +48,11 @@ class VLLMClient:
 
     @property
     def served_names(self) -> set[str]:
-        return {self.model_id, *self.adapters}
+        return {self.model_id, *self.adapters, *self._registered}
+
+    def register(self, name: str) -> None:
+        """Accept an adapter that was loaded after the client was built."""
+        self._registered.add(name)
 
     def _headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self.api_key}"} if self.api_key else {}
