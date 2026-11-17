@@ -1,0 +1,30 @@
+# Fast path: one task, one seed, smaller GEPA budget — for a first end-to-end result.
+model_id: unsloth/gemma-2-2b-it
+t2l_checkpoint: artifacts/t2l_ckpt/gemma_2b_t2l
+reflection_model: Qwen/Qwen3-8B-AWQ
+
+tasks:
+  - gsm8k
+
+seeds: [0]
+gepa_budget: 900
+
+gpu_target: 6
+gpu_reflect: 7
+
+results_dir: results
+cache_dir: data
+
+max_tokens: 512
+temperature: 0.0
+rollout_temperature: 0.6
+rollout_top_p: 0.95
+
+max_eval_items: 300
+smoke_limit: 300
+gate_tol_smoke_pp: 8.0
+gate_tol_full_pp: 10.0
+
+expected:
+  gsm8k/base: 0.5527
+  gsm8k/t2l_icl: 0.5689

@@ -1,0 +1,11 @@
+.superpowers/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+data/
+results/
+artifacts/
+.venv-serve/
+models/

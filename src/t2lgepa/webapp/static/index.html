@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mistral-7B · Adaptation Playground</title>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">◈</span>
+    <div>
+      <h1>Mistral-7B · Adaptation Playground</h1>
+      <p class="sub">One question, three ways to adapt: no adapter, a Text-to-LoRA adapter, an evolved prompt.</p>
+    </div>
+  </div>
+  <div class="status" id="status"><span class="dot"></span><span id="status-text">checking server…</span></div>
+</header>
+
+<nav class="tabs" id="task-tabs" aria-label="Benchmark"></nav>
+
+<main>
+  <section class="panel input-panel">
+    <div class="panel-head">
+      <h2>Input</h2>
+      <div class="row gap">
+        <button class="ghost" id="sample-btn">🎲 Random test item</button>
+        <button class="primary" id="compare-btn">Compare <kbd>⌘↵</kbd></button>
+      </div>
+    </div>
+
+    <label class="field">
+      <span>Question</span>
+      <textarea id="question" rows="4" placeholder="Type a question, or press “Random test item”."></textarea>
+    </label>
+
+    <label class="field" id="passage-field" hidden>
+      <span>Passage</span>
+      <textarea id="passage" rows="4" placeholder="Passage the question refers to…"></textarea>
+    </label>
+
+    <label class="field" id="options-field" hidden>
+      <span>Options <em>one per line, optional for free text</em></span>
+      <textarea id="options" rows="4" placeholder="(A) first option&#10;(B) second option"></textarea>
+    </label>
+
+    <div class="meta-line">
+      <span id="item-meta" class="muted">No item selected</span>
+      <span id="gold" class="gold" hidden></span>
+    </div>
+  </section>
+
+  <section class="cards" id="cards">
+    <article class="card placeholder"><h3>Base</h3><p>Zero-shot, no adapter.</p></article>
+    <article class="card placeholder"><h3>T2L + ICL</h3><p>Text-to-LoRA adapter generated from a task description, plus 3 demos.</p></article>
+    <article class="card placeholder"><h3>GEPA + ICL</h3><p>Instruction evolved by reflective prompt search, plus the same 3 demos.</p></article>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Study results</h2>
+      <button class="ghost" id="reload-results">Reload</button>
+    </div>
+    <div id="results" class="results-grid"><p class="muted">Loading…</p></div>
+  </section>
+</main>
+
+<footer>
+  <span>Mistral-7B-Instruct-v0.2 · 1,000 test items per task · greedy decoding</span>
+  <span id="footer-model" class="muted"></span>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

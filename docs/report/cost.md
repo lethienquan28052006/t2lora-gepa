@@ -1,0 +1,36 @@
+| arm | task | GPU seconds | generated tokens | metric calls | reflection calls |
+|---|---|---|---|---|---|
+| base | arc_challenge | 106.2 | 155201 | 1000 | 0 |
+| base | arc_easy | 101.6 | 149327 | 1000 | 0 |
+| base | boolq | 10.8 | 7990 | 1000 | 0 |
+| base | gsm8k | 106.7 | 155339 | 1000 | 0 |
+| base | hellaswag | 107.0 | 156461 | 1000 | 0 |
+| base | openbookqa | 44.9 | 65864 | 500 | 0 |
+| base | piqa | 71.0 | 101301 | 1000 | 0 |
+| base | winogrande | 61.4 | 88061 | 1000 | 0 |
+| gepa_0shot | gsm8k | 162.2 | 238237 | 1319 | 0 |
+| gepa_3shot | gsm8k | 128.5 | 167062 | 1000 | 0 |
+| icl3 | arc_challenge | 179.5 | 255419 | 1000 | 0 |
+| icl3 | arc_easy | 98.6 | 139930 | 1000 | 0 |
+| icl3 | boolq | 8.4 | 4178 | 1000 | 0 |
+| icl3 | gsm8k | 116.4 | 153435 | 1000 | 0 |
+| icl3 | hellaswag | 88.7 | 112320 | 1000 | 0 |
+| icl3 | openbookqa | 45.3 | 63068 | 500 | 0 |
+| icl3 | piqa | 60.4 | 81190 | 1000 | 0 |
+| icl3 | winogrande | 55.6 | 76576 | 1000 | 0 |
+| t2l | arc_challenge | 109.1 | 114703 | 1000 | 0 |
+| t2l | arc_easy | 105.6 | 111463 | 1000 | 0 |
+| t2l | boolq | 9.8 | 4368 | 1000 | 0 |
+| t2l | gsm8k | 133.1 | 140676 | 1000 | 0 |
+| t2l | hellaswag | 84.8 | 86129 | 1000 | 0 |
+| t2l_icl | arc_challenge | 89.4 | 88748 | 1000 | 0 |
+| t2l_icl | arc_easy | 60.4 | 58746 | 1000 | 0 |
+| t2l_icl | boolq | 9.7 | 4199 | 1000 | 0 |
+| t2l_icl | gsm8k | 128.6 | 123160 | 1000 | 0 |
+| t2l_icl | hellaswag | 61.5 | 53718 | 1000 | 0 |
+| t2l_icl | openbookqa | 25.4 | 24323 | 500 | 0 |
+| t2l_icl | piqa | 51.8 | 48462 | 1000 | 0 |
+| t2l_icl | winogrande | 47.2 | 45664 | 1000 | 0 |
+| t2l | openbookqa | 39.6 | 40511 | 500 | 0 |
+| t2l | piqa | 65.3 | 65506 | 1000 | 0 |
+| t2l | winogrande | 48.2 | 46544 | 1000 | 0 |

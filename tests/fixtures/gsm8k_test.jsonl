@@ -1,0 +1,3 @@
+{"id": "gsm8k:test:0", "task": "gsm8k", "question": "Janet has 3 apples and buys 4 more. How many?", "answers": [], "answer": "7", "rationale": "3 + 4 = 7\n#### 7", "split": "test"}
+{"id": "gsm8k:test:1", "task": "gsm8k", "question": "A box holds 12 pens. 5 are removed. How many remain?", "answers": [], "answer": "7", "rationale": "12 - 5 = 7\n#### 7", "split": "test"}
+{"id": "gsm8k:test:2", "task": "gsm8k", "question": "Tom runs 2 miles a day for 3 days. Total miles?", "answers": [], "answer": "6", "rationale": "2 * 3 = 6\n#### 6", "split": "test"}

@@ -1,0 +1,13 @@
+model: /mnt/home/quan.lt/dev/t2lora-gepa/models/mistral-7b-instruct-v0.2
+enable_lora: true
+max_lora_rank: 64
+lora_modules:
+- '{"name": "t2l_arc_challenge", "path": "/data/quan.lt/temp/t2l-mistral/loras/arc_challenge"}'
+- '{"name": "t2l_boolq", "path": "/data/quan.lt/temp/t2l-mistral/loras/boolq"}'
+- '{"name": "t2l_gsm8k", "path": "/data/quan.lt/temp/t2l-mistral/loras/gsm8k"}'
+- '{"name": "t2l_hellaswag", "path": "/data/quan.lt/temp/t2l-mistral/loras/hellaswag"}'
+- '{"name": "t2l_winogrande", "path": "/data/quan.lt/temp/t2l-mistral/loras/winogrande"}'
+gpu_memory_utilization: 0.9
+max_model_len: 4096
+port: 8010
+served_model_name: mistralai/Mistral-7B-Instruct-v0.2
