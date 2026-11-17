@@ -12,7 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import yaml
 
 
-def build(root: Path, model: str, gpu_util: float, max_model_len: int, port: int) -> dict:
+def build(root: Path, model: str, gpu_util: float, max_model_len: int, port: int,
+          max_loras: int = 8) -> dict:
     modules = [
         json.dumps({"name": f"t2l_{d.name}", "path": str(d)})
         for d in sorted((root / "loras").iterdir())
@@ -23,6 +24,7 @@ def build(root: Path, model: str, gpu_util: float, max_model_len: int, port: int
         "served_model_name": "mistralai/Mistral-7B-Instruct-v0.2",
         "enable_lora": True,
         "max_lora_rank": 64,
+        "max_loras": max_loras,
         "lora_modules": modules,
         "gpu_memory_utilization": gpu_util,
         "max_model_len": max_model_len,
@@ -40,11 +42,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--gpu-util", type=float, default=0.35)
     parser.add_argument("--max-model-len", type=int, default=4096)
     parser.add_argument("--port", type=int, default=8010)
+    parser.add_argument("--max-loras", type=int, default=8)
+    parser.add_argument("--out", default="serve_demo.yaml")
     args = parser.parse_args(argv)
 
     root = Path(args.root)
-    config = build(root, args.model, args.gpu_util, args.max_model_len, args.port)
-    out = root / "serve_demo.yaml"
+    config = build(root, args.model, args.gpu_util, args.max_model_len, args.port,
+                   max_loras=args.max_loras)
+    out = root / args.out
     out.write_text(yaml.safe_dump(config, sort_keys=False))
     print(f"wrote {out} with {len(config['lora_modules'])} adapters")
     return 0
