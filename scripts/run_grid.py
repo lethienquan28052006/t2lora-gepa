@@ -74,7 +74,7 @@ def args_lora_root() -> str:
 
 
 def arm_kind(arm: str) -> str:
-    if arm in ("base", "icl3", "t2l", "t2l_icl"):
+    if arm in ("base", "icl3", "t2l", "t2l_icl", "t2l_gepa"):
         return "run_arm"
     if arm in GEPA_ARMS_SUPPORTED:
         return "gepa"
@@ -149,6 +149,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base-url", default="http://localhost:8010")
     parser.add_argument("--extras", action="store_true")
     parser.add_argument("--no-gepa", action="store_true")
+    parser.add_argument("--arms", default=None,
+                        help="comma separated comparison arms, e.g. t2l_gepa")
     parser.add_argument("--gepa-only", action="store_true",
                         help="plan only GEPA jobs; comparison arms must already exist")
     parser.add_argument("--gepa-tasks", default=None,
@@ -166,8 +168,10 @@ def main(argv: list[str] | None = None) -> int:
     gs = [int(s) for s in args.gepa_seeds.split(",")] if args.gepa_seeds else None
     ga = args.gepa_arms.split(",") if args.gepa_arms else None
     gt = args.gepa_tasks.split(",") if args.gepa_tasks else None
+    ta = args.arms.split(",") if args.arms else None
     jobs = plan_grid(cfg, extras=args.extras, gepa=not args.no_gepa, gepa_seeds=gs,
-                     gepa_arms=ga, gepa_tasks=gt, gepa_only=args.gepa_only)
+                     gepa_arms=ga, gepa_tasks=gt, gepa_only=args.gepa_only,
+                     arms=ta)
     assert_one_job_per_gpu(jobs)
     for job in jobs:
         print(f"{job.kind:7s} gpu{job.gpu}  {job.arm:16s} {job.task:14s} seed={job.seed}")

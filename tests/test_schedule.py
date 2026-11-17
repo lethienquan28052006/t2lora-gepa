@@ -81,7 +81,7 @@ def test_reflect_cmd_uses_the_isolated_vllm_binary(cfg):
 def test_gepa_arms_can_be_skipped(cfg):
     jobs = plan_grid(cfg, gepa=False)
     assert all(not j.arm.startswith("gepa") for j in jobs)
-    assert {j.arm for j in jobs} == {"base", "icl3", "t2l", "t2l_icl"}
+    assert {j.arm for j in jobs} == {"base", "icl3", "t2l", "t2l_icl", "t2l_gepa"}
 
 
 def test_gepa_seeds_can_be_restricted(cfg):
@@ -132,3 +132,13 @@ def test_gepa_seed_instruction_matches_the_task():
     assert "####" not in seed_instruction("hellaswag")
     assert "option" in seed_instruction("hellaswag").lower()
     assert "yes" in seed_instruction("boolq").lower()
+
+
+def test_t2l_gepa_arm_is_planned(cfg):
+    jobs = plan_grid(cfg, gepa=False)
+    assert any(j.arm == "t2l_gepa" for j in jobs)
+
+
+def test_target_arms_can_be_restricted(cfg):
+    jobs = plan_grid(cfg, gepa=False, arms=["t2l_gepa"])
+    assert {j.arm for j in jobs} == {"t2l_gepa"}
