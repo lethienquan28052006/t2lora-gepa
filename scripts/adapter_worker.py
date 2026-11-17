@@ -26,8 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 def load_generator(checkpoint: str, device: str = "cuda"):
     """Load the frozen T2L hypernetwork and everything it needs. Returns a generate() callable."""
     import torch
-    from hyper_llm_modulator.hyper_modulator import load_hypermod_checkpoint, save_lora
-    from hyper_llm_modulator.utils import embed_texts, get_layers, model_loading
+    from hyper_llm_modulator.utils import model_loading
     from peft import PeftConfig
 
     from t2lgepa._t2l_shim import disable_flash_attn, tolerate_newer_peft_configs
@@ -36,6 +35,8 @@ def load_generator(checkpoint: str, device: str = "cuda"):
     tolerate_newer_peft_configs()
 
     import peft
+    from hyper_llm_modulator.hyper_modulator import load_hypermod_checkpoint, save_lora
+    from hyper_llm_modulator.utils import embed_texts, get_layers
 
     checkpoint_dir = Path(checkpoint).parent
     peft_config = peft.get_peft_config(
@@ -85,6 +86,10 @@ def _force_alpha_over_r_scaling(path: Path) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # the protocol is JSON lines on stdout; libraries chat on stdout too, so move them away
+    protocol = sys.stdout
+    sys.stdout = sys.stderr
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--out", required=True)
@@ -92,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     generate = load_generator(args.checkpoint, args.device)
-    print(json.dumps({"ready": True}), flush=True)
+    print(json.dumps({"ready": True}), file=protocol, flush=True)
     for line in sys.stdin:
         line = line.strip()
         if not line:
@@ -101,7 +106,7 @@ def main(argv: list[str] | None = None) -> int:
         path = generate(request["description"], Path(args.out) / request["id"])
         seconds = float((path / "gen_seconds.txt").read_text())
         print(json.dumps({"id": request["id"], "path": str(path), "seconds": seconds}),
-              flush=True)
+              file=protocol, flush=True)
     return 0
 
 

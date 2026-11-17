@@ -66,11 +66,13 @@ class AdapterWorker:
 
     def _read(self) -> dict:
         assert self.proc is not None and self.proc.stdout is not None
-        line = self.proc.stdout.readline()
-        if not line:
-            assert self.proc.stderr is not None
-            raise RuntimeError(f"adapter worker died: {self.proc.stderr.read()[-2000:]}")
-        return json.loads(line)
+        while True:
+            line = self.proc.stdout.readline()
+            if not line:
+                assert self.proc.stderr is not None
+                raise RuntimeError(f"adapter worker died: {self.proc.stderr.read()[-2000:]}")
+            if line.lstrip().startswith("{"):
+                return json.loads(line)
 
     def generate(self, description: str) -> Path:
         assert self.proc is not None and self.proc.stdin is not None
