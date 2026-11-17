@@ -28,7 +28,7 @@ def load_generator(checkpoint: str, device: str = "cuda"):
     import torch
     from hyper_llm_modulator.hyper_modulator import load_hypermod_checkpoint, save_lora
     from hyper_llm_modulator.utils import embed_texts, get_layers, model_loading
-    from peft import PeftConfig, get_peft_config
+    from peft import PeftConfig
 
     from t2lgepa._t2l_shim import disable_flash_attn, tolerate_newer_peft_configs
 
@@ -36,7 +36,7 @@ def load_generator(checkpoint: str, device: str = "cuda"):
     tolerate_newer_peft_configs()
 
     checkpoint_dir = Path(checkpoint).parent
-    peft_config = get_peft_config(
+    peft_config = peft.get_peft_config(
         PeftConfig.from_json_file(str(checkpoint_dir / "adapter_config.json"))
     )
     (
