@@ -156,6 +156,32 @@ Consequence: a combination has to be **co-optimised** — the prompt has to be s
 adapter in the loop — or the search has to move to a different surface entirely (the task
 description that generates the adapter).
 
+## Combination C (pilot): search the task description, not the prompt
+
+Idea: keep T2L frozen and let GEPA rewrite the **description** that generates the adapter.
+Each candidate = one hypernetwork forward pass (~0.04 s warm) + dynamic LoRA load in vLLM
+(`POST /v1/load_lora_adapter`) + a minibatch of rollouts.
+
+Plumbing works end to end: adapters are generated, loaded, scored, and the final description's
+adapter is evaluated on the full test set.
+
+The search itself produced **no new candidates**: in 10 iterations on each task the reflective
+proposer returned nothing, so every run scored the seed description.
+
+| task | seed description | best description | test (searched) | test (`t2l_icl`, shipped) |
+|---|---|---|---|---|
+| winogrande | unchanged | unchanged | 63.5% | 64.6% |
+| gsm8k | unchanged | unchanged | 48.6% | 49.7% |
+
+Conclusion: the *mechanism* is sound, but the candidate-proposal step does not fit. GEPA's
+default proposer is written for an instruction that produced the sampled outputs; a task
+description is a different object, and the reflector declined to rewrite it. The next step is
+a description-specific proposer (explicitly asking for a new task description from the failure
+cases), not a change to T2L.
+
+The ~1pp gap against `t2l_icl` is the same adapter generated through a different path
+(re-serialised weights, different LoRA slot layout), not a different method.
+
 ## Cost
 
 | arm | GPU seconds (5 tasks) | generated tokens |
