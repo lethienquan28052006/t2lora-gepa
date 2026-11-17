@@ -111,6 +111,9 @@ class LoRARegistry:
             headers=self.headers, timeout=self.timeout_s,
         )
         if resp.status_code >= 400:
+            if "already been loaded" in resp.text:
+                self.loaded.add(name)
+                return
             raise RuntimeError(f"load_lora_adapter failed ({resp.status_code}): {resp.text[:300]}")
         self.loaded.add(name)
 

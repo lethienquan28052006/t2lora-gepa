@@ -51,3 +51,12 @@ def test_adapter_switches_model_only_when_the_description_changes(tmp_path):
     assert second == adapter_name("rules B")
     assert loaded == [adapter_name("rules A"), adapter_name("rules B")]
     assert made.count("rules A") == 2  # make_adapter is idempotent by name
+
+
+def test_registry_treats_already_loaded_as_success():
+    with respx.mock(assert_all_called=False) as mock:
+        mock.post("http://localhost:8010/v1/load_lora_adapter").respond(
+            400, json={"error": {"message": "The lora adapter 'x' has already been loaded."}})
+        reg = LoRARegistry("http://localhost:8010")
+        reg.load("x", Path("/tmp/x"))
+        assert "x" in reg.loaded
