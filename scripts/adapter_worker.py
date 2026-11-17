@@ -35,12 +35,14 @@ def load_generator(checkpoint: str, device: str = "cuda"):
     disable_flash_attn(model_loading)
     tolerate_newer_peft_configs()
 
+    import peft
+
     checkpoint_dir = Path(checkpoint).parent
     peft_config = peft.get_peft_config(
         PeftConfig.from_json_file(str(checkpoint_dir / "adapter_config.json"))
     )
     (
-        args,
+        _args,
         hypermod,
         model,
         tokenizer,
