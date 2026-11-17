@@ -66,16 +66,15 @@ def search_task(
         return cache[name]
 
     metric = MeteredMetric(score, budget)
-    adapter = DescriptionAdapter(
-        client=client, cfg=cfg, metric=metric, make_adapter=make_adapter,
-        registry=LoRARegistry(base_url), train_demos=demos,
-    )
 
-    def reflect(messages):
-        prompt = messages if isinstance(messages, str) else "\n\n".join(
-            m["content"] for m in messages)
+    def reflect(prompt: str) -> str:
         return client.generate([prompt], model=cfg.model_id, temperature=1.0,
                                max_tokens=1024)[0].text
+
+    adapter = DescriptionAdapter(
+        client=client, cfg=cfg, metric=metric, make_adapter=make_adapter,
+        registry=LoRARegistry(base_url), train_demos=demos, reflect=reflect,
+    )
 
     result = optimize(
         seed_candidate={"instruction": seeded_description(task)},

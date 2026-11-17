@@ -128,6 +128,43 @@ class LoRARegistry:
         self.loaded.discard(name)
 
 
+def clean_description(reply: str) -> str:
+    """Strip fences, quotes and list prefixes a chat model likes to add."""
+    text = reply.strip()
+    for marker in ("```text", "```"):
+        if text.startswith(marker):
+            text = text[len(marker):]
+    text = text.strip("`").strip().strip('"').strip()
+    if text.lower().startswith("description:"):
+        text = text.split(":", 1)[1].strip()
+    return text.strip()
+
+
+def build_description_prompt(description: str, rows: Sequence[dict[str, Any]]) -> str:
+    evidence = "\n\n".join(
+        f"Input:\n{row.get('Inputs', '')}\n\nModel output:\n{row.get('Generated Outputs', '')}"
+        f"\n\nFeedback:\n{row.get('Feedback', '')}"
+        for row in rows[:6]
+    )
+    return f"""You are improving the natural-language task description that a Text-to-LoRA
+hypernetwork turns into a LoRA adapter.
+
+Current description:
+{description}
+
+Evidence from the adapted model on training items:
+
+{evidence}
+
+Write a NEW task description that would produce an adapter which fixes the failures above.
+Rules:
+- 2 to 5 sentences, plain prose, no lists, no markdown.
+- Describe the task, the required answer format, and the reasoning skill involved.
+- Do not mention specific example questions or answers.
+- Reply with the description only.
+"""
+
+
 class DescriptionAdapter:
     """GEPA adapter whose candidate is a task description, not an instruction."""
 
@@ -141,6 +178,7 @@ class DescriptionAdapter:
         make_adapter: Callable[[str], tuple[str, Path]],
         registry: LoRARegistry,
         train_demos: list[Example] | None = None,
+        reflect: Callable[[str], str] | None = None,
     ) -> None:
         self.client = client
         self.cfg = cfg
@@ -149,6 +187,7 @@ class DescriptionAdapter:
         self.registry = registry
         self.current: str | None = None
         self.train_demos = train_demos or []
+        self.reflect = reflect
 
     def model_for(self, description: str) -> str:
         name, path = self.make_adapter(description)
@@ -179,6 +218,23 @@ class DescriptionAdapter:
                                  "correct": correct})
         return EvaluationBatch(outputs=outputs, scores=scores,
                                trajectories=trajectories if capture_traces else None)
+
+    def propose_new_texts(self, candidate: dict[str, str], reflective_dataset,
+                          components_to_update: Sequence[str]) -> dict[str, str]:
+        """Ask the reflector for a new *task description*, not a new prompt.
+
+        GEPA's built-in proposer treats the candidate as the instruction that produced the
+        sampled outputs; a task description is a different object and the reflector declines
+        to rewrite it. This proposer states the job explicitly.
+        """
+        if self.reflect is None:
+            return {}
+        rows = list(reflective_dataset.get("instruction", []))
+        reply = self.reflect(build_description_prompt(candidate["instruction"], rows))
+        new = clean_description(reply)
+        if not new or new.strip() == candidate["instruction"].strip():
+            return {}
+        return {component: new for component in components_to_update}
 
     def make_reflective_dataset(self, candidate: dict[str, str], eval_batch,
                                 components_to_update: Sequence[str]) -> dict[str, list[dict[str, Any]]]:

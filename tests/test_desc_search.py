@@ -60,3 +60,36 @@ def test_registry_treats_already_loaded_as_success():
         reg = LoRARegistry("http://localhost:8010")
         reg.load("x", Path("/tmp/x"))
         assert "x" in reg.loaded
+
+
+def _adapter_with_reflect(reply, tmp_path):
+    def make(desc):
+        return adapter_name(desc), tmp_path / adapter_name(desc)
+
+    class Reg:
+        def load(self, name, path):
+            pass
+
+    return DescriptionAdapter(client=object(), cfg=object(), metric=object(),
+                              make_adapter=make, registry=Reg(),
+                              reflect=lambda prompt: reply)
+
+
+def test_proposer_returns_the_new_description(tmp_path):
+    ad = _adapter_with_reflect("A new description.", tmp_path)
+    rows = [{"Inputs": "q", "Generated Outputs": "a", "Feedback": "wrong"}]
+    new = ad.propose_new_texts({"instruction": "old"}, {"instruction": rows}, ["instruction"])
+    assert new == {"instruction": "A new description."}
+
+
+def test_proposer_rejects_an_echo(tmp_path):
+    ad = _adapter_with_reflect("old description", tmp_path)
+    rows = [{"Inputs": "q", "Generated Outputs": "a", "Feedback": "wrong"}]
+    assert ad.propose_new_texts({"instruction": "old description"}, {"instruction": rows},
+                                ["instruction"]) == {}
+
+
+def test_proposer_rejects_an_empty_reply(tmp_path):
+    ad = _adapter_with_reflect("   ", tmp_path)
+    assert ad.propose_new_texts({"instruction": "old"}, {"instruction": []},
+                                ["instruction"]) == {}
