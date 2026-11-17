@@ -127,6 +127,35 @@ reported as "found nothing", not as a result.
    pass and a 14MB adapter; GEPA is ~1,250 rollouts plus ~10 reflection calls per task,
    roughly 5–6 minutes of GPU time, and it must be redone for every new task.
 
+## Combination A: adapter + the prompt evolved for the base model
+
+`t2l_gepa` = `t2l_<task>` adapter + the GEPA instruction found for the base model + the same
+3 demos. No new optimisation: this tests only whether a prompt evolved against the base model
+transfers to the adapted model.
+
+| task | base | t2l_icl | gepa_3shot | **t2l_gepa** | vs t2l_icl |
+|---|---|---|---|---|---|
+| gsm8k | 47.5 | **49.7** | 45.4 | 45.5 | **−4.2** [−7.2, −1.2] |
+| arc_challenge | 73.9 | 73.7 | 73.0 | 73.7 | +0.0 [−0.6, +0.6] |
+| boolq | 82.4 | 86.1 | 83.3 | **86.2** | +0.1 [+0.0, +0.3] |
+| hellaswag | 47.7 | 63.9 | 54.7 | **64.2** | +0.3 [−0.3, +0.9] |
+| winogrande | 59.3 | **64.6** | 64.3 | 58.6 | **−6.0** [−8.9, −3.2] |
+| **mean Δ vs base** | | +5.4 | +2.0 | **+3.5** | |
+
+**The evolved prompt does not transfer to the adapter.** It is a wash on three tasks
+(+0.0 to +0.3pp) and significantly worse on two (gsm8k −4.2, winogrande −6.0). Mean +3.5pp
+against `t2l_icl`'s +5.4pp.
+
+Mechanism: the instruction was optimised against the base model's failure modes. With the
+adapter active, those failure modes are already gone, and the prompt's reasoning scaffolding
+fights the adapter's own answer style. On WinoGrande the GEPA prompt asks for "brief
+reasoning", and the fraction of outputs with no extractable answer rises from 8.8%
+(`t2l_icl`) to 12.4% (`t2l_gepa`) — the adapter and the instruction disagree about the format.
+
+Consequence: a combination has to be **co-optimised** — the prompt has to be searched with the
+adapter in the loop — or the search has to move to a different surface entirely (the task
+description that generates the adapter).
+
 ## Cost
 
 | arm | GPU seconds (5 tasks) | generated tokens |
