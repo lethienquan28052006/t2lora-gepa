@@ -132,8 +132,7 @@ def clean_description(reply: str) -> str:
     """Strip fences, quotes and list prefixes a chat model likes to add."""
     text = reply.strip()
     for marker in ("```text", "```"):
-        if text.startswith(marker):
-            text = text[len(marker):]
+        text = text.removeprefix(marker)
     text = text.strip("`").strip().strip('"').strip()
     if text.lower().startswith("description:"):
         text = text.split(":", 1)[1].strip()
