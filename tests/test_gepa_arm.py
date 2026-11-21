@@ -250,3 +250,11 @@ def test_compose_renders_the_boolq_passage():
     ex = Example(id="boolq:train:0", task="boolq", question="is it?", answers=[],
                  answer="yes", rationale="the passage", split="train")
     assert "the passage" in _compose("Answer yes or no.", ex, None)
+
+
+def test_load_best_prompt_reads_the_saved_file(tmp_path):
+    from t2lgepa.gepa_arm import load_best_prompt
+
+    (tmp_path / "gepa_gsm8k_s0_best_prompt.txt").write_text("  EVOLVED RULES  \n")
+    assert load_best_prompt(tmp_path, "gsm8k") == "EVOLVED RULES"
+    assert load_best_prompt(tmp_path, "boolq") is None

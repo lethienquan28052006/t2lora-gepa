@@ -237,6 +237,11 @@ def export_best_prompt(result: GepaResult, out_dir: str | Path, task: str, seed:
     return path
 
 
+def load_best_prompt(results_dir: str | Path, task: str, seed: int = 0) -> str | None:
+    path = Path(results_dir) / f"gepa_{task}_s{seed}_best_prompt.txt"
+    return path.read_text().strip() if path.exists() else None
+
+
 def prompt_fn_from(instruction: str, few_shot_block: str | None):
     def build(example: Example) -> str:
         return _compose(instruction, example, few_shot_block)

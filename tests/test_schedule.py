@@ -81,7 +81,7 @@ def test_reflect_cmd_uses_the_isolated_vllm_binary(cfg):
 def test_gepa_arms_can_be_skipped(cfg):
     jobs = plan_grid(cfg, gepa=False)
     assert all(not j.arm.startswith("gepa") for j in jobs)
-    assert {j.arm for j in jobs} == {"base", "icl3", "t2l", "t2l_icl"}
+    assert {j.arm for j in jobs} == {"base", "icl3", "t2l", "t2l_icl", "t2l_gepa"}
 
 
 def test_gepa_seeds_can_be_restricted(cfg):
@@ -132,3 +132,47 @@ def test_gepa_seed_instruction_matches_the_task():
     assert "####" not in seed_instruction("hellaswag")
     assert "option" in seed_instruction("hellaswag").lower()
     assert "yes" in seed_instruction("boolq").lower()
+
+
+def test_t2l_gepa_arm_is_planned(cfg):
+    jobs = plan_grid(cfg, gepa=False)
+    assert any(j.arm == "t2l_gepa" for j in jobs)
+
+
+def test_target_arms_can_be_restricted(cfg):
+    jobs = plan_grid(cfg, gepa=False, arms=["t2l_gepa"])
+    assert {j.arm for j in jobs} == {"t2l_gepa"}
+
+
+def test_target_prompt_for_t2l_gepa_uses_the_evolved_text():
+    from run_grid import target_model, target_prompt
+
+    from t2lgepa.data import Example
+
+    ex = Example(id="hellaswag:test:0", task="hellaswag", question="A man is",
+                 answers=["running", "sleeping", "eating", "driving"], answer="A",
+                 rationale=None, split="test")
+    prompt = target_prompt("t2l_gepa", ex, [ex], "EVOLVED RULES")
+    # the demo block comes first, exactly as the GEPA arm was evaluated
+    assert "EVOLVED RULES" in prompt
+    assert prompt.index("EVOLVED RULES") > prompt.index("Question: A man is")
+    assert "(D) driving" in prompt
+    assert target_model("t2l_gepa", "gsm8k", _cfg()) == "t2l_gsm8k"
+
+
+def test_t2l_gepa_without_an_evolved_prompt_is_refused():
+    import pytest as _pytest
+    from run_grid import target_prompt
+
+    from t2lgepa.data import Example
+
+    ex = Example(id="gsm8k:test:0", task="gsm8k", question="2+2?", answers=[],
+                 answer="4", rationale=None, split="test")
+    with _pytest.raises(ValueError):
+        target_prompt("t2l_gepa", ex, [], None)
+
+
+def _cfg():
+    from t2lgepa.config import load_config
+
+    return load_config("configs/mistral.yaml")
