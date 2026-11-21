@@ -25,3 +25,13 @@ def test_main_writes_all_adapters(tmp_path):
     written = yaml.safe_load(out.read_text())
     assert len(written["lora_modules"]) == 2
     assert written["port"] == 8010
+
+
+def test_demo_config_can_reserve_lora_slots(tmp_path):
+    import write_demo_config
+
+    root = tmp_path / "root"
+    (root / "loras" / "gsm8k").mkdir(parents=True)
+    config = write_demo_config.build(root, "/models/m", 0.55, 4096, 8010, max_loras=4)
+    assert config["max_loras"] == 4
+    assert config["gpu_memory_utilization"] == 0.55

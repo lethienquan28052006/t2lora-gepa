@@ -127,6 +127,79 @@ reported as "found nothing", not as a result.
    pass and a 14MB adapter; GEPA is ~1,250 rollouts plus ~10 reflection calls per task,
    roughly 5–6 minutes of GPU time, and it must be redone for every new task.
 
+## Combination A: adapter + the prompt evolved for the base model
+
+`t2l_gepa` = `t2l_<task>` adapter + the GEPA instruction found for the base model + the same
+3 demos. No new optimisation: this tests only whether a prompt evolved against the base model
+transfers to the adapted model.
+
+| task | base | t2l_icl | gepa_3shot | **t2l_gepa** | vs t2l_icl |
+|---|---|---|---|---|---|
+| gsm8k | 47.5 | **49.7** | 45.4 | 45.5 | **−4.2** [−7.2, −1.2] |
+| arc_challenge | 73.9 | 73.7 | 73.0 | 73.7 | +0.0 [−0.6, +0.6] |
+| boolq | 82.4 | 86.1 | 83.3 | **86.2** | +0.1 [+0.0, +0.3] |
+| hellaswag | 47.7 | 63.9 | 54.7 | **64.2** | +0.3 [−0.3, +0.9] |
+| winogrande | 59.3 | **64.6** | 64.3 | 58.6 | **−6.0** [−8.9, −3.2] |
+| **mean Δ vs base** | | +5.4 | +2.0 | **+3.5** | |
+
+**The evolved prompt does not transfer to the adapter.** It is a wash on three tasks
+(+0.0 to +0.3pp) and significantly worse on two (gsm8k −4.2, winogrande −6.0). Mean +3.5pp
+against `t2l_icl`'s +5.4pp.
+
+Mechanism: the instruction was optimised against the base model's failure modes. With the
+adapter active, those failure modes are already gone, and the prompt's reasoning scaffolding
+fights the adapter's own answer style. On WinoGrande the GEPA prompt asks for "brief
+reasoning", and the fraction of outputs with no extractable answer rises from 8.8%
+(`t2l_icl`) to 12.4% (`t2l_gepa`) — the adapter and the instruction disagree about the format.
+
+Consequence: a combination has to be **co-optimised** — the prompt has to be searched with the
+adapter in the loop — or the search has to move to a different surface entirely (the task
+description that generates the adapter).
+
+## Combination C: search the task description, not the prompt
+
+Idea: keep T2L frozen and let GEPA rewrite the **description** that generates the adapter.
+Each candidate = one hypernetwork forward pass (~0.04 s warm) + dynamic LoRA load in vLLM
+(`POST /v1/load_lora_adapter`) + a minibatch of rollouts.
+
+The pipeline works end to end and is cheap:
+
+| step | measured |
+|---|---|
+| load hypernetwork + base + encoder (once) | 16.2 s |
+| generate one adapter | 0.03–0.04 s (1.5 s first call) |
+| load it into the running vLLM | ~1 s |
+| evaluate 15 train items, 3-shot | ~20 s |
+
+GEPA's default proposer is written for the instruction that produced the sampled outputs; a
+task description is a different object and the first attempt produced **zero** candidates in
+10 iterations. A description-specific proposer ("here is the current description and the
+model's failures; write a new description") fixed that: winogrande then explored **10
+candidates**.
+
+The search still did not improve on the shipped description:
+
+| task | candidates | val (120 items) | **test (1,000)** | test, shipped adapter |
+|---|---|---|---|---|
+| winogrande | 10 | 0.792 | 0.632 | **0.646** |
+| gsm8k | 1 | 0.525 | 0.480 | **0.497** |
+
+Three things this establishes:
+
+1. **Description space is reachable and cheap.** Ten adapters cost ~15 minutes including all
+   rollouts; generation itself is negligible.
+2. **Nothing beat the seed.** With 120 selection items the noise is ±4pp, so the optimiser
+   cannot distinguish a real improvement from luck; no candidate was accepted.
+3. **There is a ~1.4pp pipeline floor.** The same description, regenerated and loaded
+   dynamically, scores 63.2% instead of 64.6% on the test set. That is the same adapter through
+   a different vLLM configuration (`max_loras` 4 vs 8, dynamic load), not a different method —
+   and it means any description-search gain would have to exceed ~1.5pp to be visible.
+
+What it would take to make C informative: a larger selection set (300–500 items) and a
+proposer that sees the *contrast* between a candidate's val score and the seed's, which is
+what GEPA's Pareto frontier already does for prompts. That is a different experiment from the
+one that fits in this run.
+
 ## Cost
 
 | arm | GPU seconds (5 tasks) | generated tokens |

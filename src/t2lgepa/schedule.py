@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from t2lgepa.config import Config
 
-TARGET_ONLY_ARMS = ("base", "icl3", "t2l", "t2l_icl")
+TARGET_ONLY_ARMS = ("base", "icl3", "t2l", "t2l_icl", "t2l_gepa")
 GEPA_ARMS = ("gepa_3shot", "gepa_0shot")
 
 
@@ -23,14 +23,15 @@ def plan_grid(cfg: Config, extras: bool = False, gepa: bool = True,
               gepa_seeds: list[int] | None = None,
               gepa_arms: list[str] | None = None,
               gepa_tasks: list[str] | None = None,
-              gepa_only: bool = False) -> list[Job]:
+              gepa_only: bool = False,
+              arms: list[str] | None = None) -> list[Job]:
     jobs: list[Job] = []
     gepa_arms = tuple(gepa_arms) if gepa_arms else (
         GEPA_ARMS + (("gepa_noreflect", "gepa_merge") if extras else ())
     )
     if not gepa_only:
         for task in cfg.tasks:
-            for arm in TARGET_ONLY_ARMS:
+            for arm in (arms if arms is not None else TARGET_ONLY_ARMS):
                 jobs.append(Job(arm, task, 0, cfg.gpu_target, "target"))
     if not gepa:
         return jobs

@@ -49,6 +49,14 @@ def tolerate_newer_peft_configs() -> None:
     peft.get_peft_config = wrapper
     if hasattr(peft, "mapping"):
         peft.mapping.get_peft_config = wrapper
+    # modules that did `from peft import get_peft_config` before this patch keep a direct
+    # reference to the original; rebind it so they see the filtered version too.
+    import sys
+
+    for module in list(sys.modules.values()):
+        for attr in ("get_peft_config", "_get_peft_config"):
+            if getattr(module, attr, None) is original:
+                setattr(module, attr, wrapper)
 
 
 def main(argv: list[str] | None = None) -> int:

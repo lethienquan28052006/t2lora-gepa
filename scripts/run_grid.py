@@ -19,6 +19,7 @@ from t2lgepa.gepa_arm import (
     GepaGateFailed,
     assert_gate,
     export_best_prompt,
+    load_best_prompt,
     prompt_fn_from,
     run_gepa,
 )
@@ -74,11 +75,30 @@ def args_lora_root() -> str:
 
 
 def arm_kind(arm: str) -> str:
-    if arm in ("base", "icl3", "t2l", "t2l_icl"):
+    if arm in ("base", "icl3", "t2l", "t2l_icl", "t2l_gepa"):
         return "run_arm"
     if arm in GEPA_ARMS_SUPPORTED:
         return "gepa"
     return "unsupported"
+
+
+def target_prompt(arm: str, example, demos, gepa_prompt: str | None):
+    """Prompt for one comparison arm, in the arm's own adaptation surface."""
+    from t2lgepa.prompts import demo_block
+
+    if arm in ("base", "t2l"):
+        return zero_shot(example)
+    if arm == "t2l_gepa":
+        if not gepa_prompt:
+            raise ValueError("no GEPA prompt for this task")
+        return prompt_fn_from(gepa_prompt, demo_block(demos) if demos else None)(example)
+    if arm in ("icl3", "t2l_icl"):
+        return three_shot(example, demos)
+    raise ValueError(f"unknown comparison arm {arm!r}")
+
+
+def target_model(arm: str, task: str, cfg: Config) -> str:
+    return lora_module_name(task) if arm.startswith("t2l") else cfg.model_id
 
 
 def run_job(
@@ -88,12 +108,12 @@ def run_job(
     reflect: VLLMClient | None,
     results_dir: Path,
 ) -> dict:
-    adapter = lora_module_name(job.task)
     splits = make_splits(job.task, cache_dir=cfg.cache_dir)
     demos = splits.train[:3]
-    if job.arm in ("base", "icl3", "t2l", "t2l_icl"):
-        model = adapter if job.arm.startswith("t2l") else cfg.model_id
-        prompt_fn = zero_shot if job.arm in ("base", "t2l") else (lambda ex: three_shot(ex, demos))
+    if job.arm in ("base", "icl3", "t2l", "t2l_icl", "t2l_gepa"):
+        gepa_prompt = load_best_prompt(results_dir, job.task, job.seed)
+        model = target_model(job.arm, job.task, cfg)
+        prompt_fn = lambda ex: target_prompt(job.arm, ex, demos, gepa_prompt)
         lora_dir = Path(args_lora_root()) / job.task
         summary = run_arm(job.arm, job.task, job.seed, target, prompt_fn, model, cfg,
                           results_dir=results_dir,
@@ -102,6 +122,8 @@ def run_job(
         return {"arm": job.arm, "task": job.task, "seed": job.seed,
                 "score": summary.score, "n": summary.n,
                 "wall_seconds": summary.wall_seconds}
+    if job.arm not in GEPA_ARMS_SUPPORTED:
+        raise RuntimeError(f"{job.arm} reached the GEPA branch")
     if reflect is None:
         raise RuntimeError(f"{job.arm} needs the reflection server")
     few_shot_block = demo_block(demos) if job.arm == "gepa_3shot" else None
@@ -149,6 +171,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--base-url", default="http://localhost:8010")
     parser.add_argument("--extras", action="store_true")
     parser.add_argument("--no-gepa", action="store_true")
+    parser.add_argument("--arms", default=None,
+                        help="comma separated comparison arms, e.g. t2l_gepa")
     parser.add_argument("--gepa-only", action="store_true",
                         help="plan only GEPA jobs; comparison arms must already exist")
     parser.add_argument("--gepa-tasks", default=None,
@@ -166,8 +190,10 @@ def main(argv: list[str] | None = None) -> int:
     gs = [int(s) for s in args.gepa_seeds.split(",")] if args.gepa_seeds else None
     ga = args.gepa_arms.split(",") if args.gepa_arms else None
     gt = args.gepa_tasks.split(",") if args.gepa_tasks else None
+    ta = args.arms.split(",") if args.arms else None
     jobs = plan_grid(cfg, extras=args.extras, gepa=not args.no_gepa, gepa_seeds=gs,
-                     gepa_arms=ga, gepa_tasks=gt, gepa_only=args.gepa_only)
+                     gepa_arms=ga, gepa_tasks=gt, gepa_only=args.gepa_only,
+                     arms=ta)
     assert_one_job_per_gpu(jobs)
     for job in jobs:
         print(f"{job.kind:7s} gpu{job.gpu}  {job.arm:16s} {job.task:14s} seed={job.seed}")

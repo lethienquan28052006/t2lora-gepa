@@ -84,3 +84,12 @@ def test_base_url_already_ending_in_v1_is_not_doubled(respx_mock):
         json={"data": [{"id": "deepseek-v4.1-flash"}]})
     VLLMClient("https://api.example/v1", "deepseek-v4.1-flash", adapters=[]).assert_ready()
     assert route.called
+
+
+def test_dynamically_loaded_adapter_must_be_registered(respx_mock):
+    respx_mock.post(f"{URL}/v1/chat/completions").respond(json=CHAT_RESP)
+    client = VLLMClient(URL, BASE, adapters=[])
+    with pytest.raises(AdapterNotLoaded):
+        client.generate(["q"], model="desc_abc")
+    client.register("desc_abc")
+    assert client.generate(["q"], model="desc_abc")[0].text == "#### 18"
