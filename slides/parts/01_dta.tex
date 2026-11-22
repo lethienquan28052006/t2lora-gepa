@@ -1,80 +1,61 @@
 %=======================================================================
-%  Slides 3-15 - Bài toán Downstream Task
-%   Transcribed 1:1 from slide-cs222.pptx.pdf (same order, same wording).
+%  Slides 3-15 - Bài toán Downstream Task  (1:1 with slide-cs222.pptx.pdf)
 %=======================================================================
 \section{Bài toán Downstream Task}
 
 % ------------------------------------------------------------------ 3
-\begin{frame}{Nội dung chương 1}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.5\textwidth}
-      \begin{enumerate}\tightlist
-        \item[\textbf{1.1}] Giới thiệu bài toán
-        \item[\textbf{1.2}] Phương pháp
-        \item[\textbf{1.3}] Hạn chế
-      \end{enumerate}
-    \end{column}
-    \begin{column}{0.44\textwidth}
-      \begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.6em]{block body}
-        \footnotesize\color{Muted}
-        \centering 1. Bài toán Downstream Task
-      \end{beamercolorbox}
-    \end{column}
-  \end{columns}
-\end{frame}
+\SectionSlide{1. Bài toán Downstream Task}{}{%
+  \large\renewcommand{\arraystretch}{1.5}
+  \begin{tabular}{@{}l@{\hspace{0.7em}}l@{}}
+    {\color{Amber}\textbf{1.1}} & \color{white}\textbf{Giới thiệu bài toán}\\
+    {\color{Amber}\textbf{1.2}} & \color{white}\textbf{Phương pháp}\\
+    {\color{Amber}\textbf{1.3}} & \color{white}\textbf{Hạn chế}
+  \end{tabular}}
 
 % ------------------------------------------------------------------ 4
 \begin{frame}{1.1\quad Giới thiệu bài toán}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.53\textwidth}
-      \justifying
-      Model là một mô hình ngôn ngữ đã qua ký hiệu là $M$, sở hữu bộ trọng số gốc
-      $\theta_0$.
+  \vspace{0.3em}
+  {\color{Amber!80!black}\textbf{Model}} là một mô hình ngôn ngữ đã qua ký hiệu là $\mathbf{M}$,
+  sở hữu bộ trọng số gốc $\theta_0$.
 
-      \vspace{0.35em}
-      Đầu ra của model $M$ trên 1 đầu vào $x$ bị ảnh hưởng bởi 2 thành phần:
-      \begin{itemize}\tightlist
-        \item $\pi$: Prompt (chỉ dẫn hay ngữ cảnh ở không gian đầu vào)
-        \item denta\_$\theta$: Phần cập nhật trọng số.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.43\textwidth}
-      \begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.7em]{block body}
-        \centering\footnotesize
-        Đầu ra của model $M$ với input $x$:\\[0.4em]
-        {\large $y = M(x;\ \pi,\ \theta_0 + \Delta\theta)$}
-      \end{beamercolorbox}
-    \end{column}
-  \end{columns}
+  \vspace{0.6em}
+  Đầu ra của model $M$ trên 1 đầu vào $\mathbf{x}$ bị ảnh hưởng bởi 2 thành phần:
+  \begin{itemize}\tightlist
+    \item $\pi$: Prompt (chỉ dẫn hay ngữ cảnh ở không gian đầu vào)
+    \item denta\_$\theta$: Phần cập nhật trọng số.
+  \end{itemize}
+
+  \vspace{0.8em}
+  \begin{beamercolorbox}[wd=\linewidth,sep=0.7em]{block body}
+    Đầu ra của model $M$ với input $\mathbf{x}$:\qquad
+    {\large\color{PaperGreen} $y = M(x;\ \pi,\ \theta_0 + \Delta\theta)$}
+  \end{beamercolorbox}
 \end{frame}
 
 % ------------------------------------------------------------------ 5
 \begin{frame}{1.1\quad Giới thiệu bài toán}
-  \justifying
-  \textbf{Downsteam Task Adaptation} là quá trình điều chỉnh một Model ($M$) để nó
-  giải quyết tốt một bài toán cụ thể ($T$), thay vì phải huấn luyện một mô hình mới
-  từ đầu.
+  \leavevmode{\color{Amber!80!black}\textbf{Downsteam Task Adaptation}}\\
+  là quá trình điều chỉnh một Model \textbf{(M)} để nó giải quyết tốt một bài toán cụ thể
+  \textbf{(T)}, thay vì phải huấn luyện một mô hình mới từ đầu.
 
-  \vspace{0.3em}
-  Đặt $D_T$ là tập phân phối dữ liệu $(x, m)$ của task $T$.
-  \begin{itemize}\tightlist
-    \item Với $x$ là input của task $T$.
-    \item Với $m$ là đáp án đúng của task $T$.
-  \end{itemize}
+  \vspace{0.6em}
+  Đặt $D_T$ là tập phân phối dữ liệu $(x, m)$ của task $T$.\\
+  Với $x$ là input của task $T$.\\
+  Với $m$ là đáp án đúng của task $T$.
 
-  \begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.5em]{block body}
-    \centering\footnotesize
-    Nhiệm vụ:\\[0.3em]
-    $(\pi^*, \Delta\theta^*) = \arg\max_{(\pi, \Delta\theta)}\ \mathbb{E}_{((x,\,m)\sim D_T)}\big[\ \mu(M(x;\ \pi,\ \theta_0 + \Delta\theta),\ m)\ \big]$
+  \vspace{0.7em}
+  \begin{beamercolorbox}[wd=\linewidth,sep=0.6em]{block body}
+    \leavevmode{\color{Amber!80!black}\textbf{Nhiệm vụ:}}\par\vspace{-0.2em}
+    \[ (\pi^*, \Delta\theta^*) = \arg\max_{(\pi, \Delta\theta)}\ \mathbb{E}_{(x,\,m)\sim D_T}\big[\ \mu(M(x;\ \pi,\ \theta_0 + \Delta\theta),\ m)\ \big] \]
+    $\Leftrightarrow$ Mục tiêu: tìm bộ trọng số $\boldsymbol{\theta^*}$ và bộ prompt $\boldsymbol{\pi^*}$ tốt nhất.
   \end{beamercolorbox}
-  \vspace{0.2em}
-  $\Leftrightarrow$ \textbf{Mục tiêu:} tìm bộ trọng số $\theta^*$ và bộ prompt $\pi^*$ tốt nhất.
 \end{frame}
 
 % ------------------------------------------------------------------ 6
 \begin{frame}{1.1\quad Giới thiệu bài toán}
-  Ví dụ một số downstream task:
-  \begin{itemize}\tightlist
+  \leavevmode{\color{Amber!80!black}\textbf{Ví dụ một số downstream task:}}
+  \vspace{0.3em}
+  \begin{itemize}\setlength{\itemsep}{0.45em}
     \item Suy luận giải Toán
     \item Hỏi đáp suy luận đa bước
     \item Kiểm chứng thông tin
@@ -85,12 +66,16 @@
 \end{frame}
 
 % ------------------------------------------------------------------ 7
-\begin{frame}{1.1\quad Giới thiệu bài toán: Downstream Task}
+\begin{frame}[c]{1.1\quad Giới thiệu bài toán: Downstream Task}
+  \centering
+  {\color{Navy}\Huge\bfseries Downstream Task}\\[0.5em]
+  {\color{Amber}\rule{5cm}{1.4pt}}
 \end{frame}
 
 % ------------------------------------------------------------------ 8
 \begin{frame}{1.1\quad Giới thiệu bài toán}
-  \FigureFull[0.66]{t2l/fig4_qualitative}{Hình 4 --- Text-to-LoRA (ICML 2025)}
+  \vspace{0.4em}
+  \centering\DeckFig[0.78]{compound_ai}{0.88\linewidth}
 \end{frame}
 
 % ------------------------------------------------------------------ 9
@@ -98,7 +83,7 @@
   \textbf{Hướng tối ưu prompt ($\pi$)}
   \begin{itemize}\tightlist
     \item In-Context Learning:
-      \begin{itemize}\tightlist
+      \begin{itemize}\setlength{\itemsep}{0.3em}\normalsize
         \item Few-shot
         \item Chain of Thought
         \item Self-Consistency
@@ -114,14 +99,14 @@
   \begin{itemize}\tightlist
     \item In-Context Learning:
     \item Automated Optimization:
-      \begin{itemize}\tightlist
-        \item LLM-as-an-Optimizer: Dùng LLM để tối ưu prompt
-        \item EvoPrompt: Dùng thuật toán tiến hoá.
-        \item RL-based Prompting: Dùng RL huấn luyện một mô hình nhỏ để sinh ra chuỗi
-              token prompt giúp tối đa hóa phần thưởng.
-        \item Hệ thống có nhiều LLM (Compound AI System):
-          \begin{itemize}\tightlist
-            \item Tối ưu đồng bộ cả câu chỉ dẫn lẫn bộ mẫu few-shot cho toàn bộ
+      \begin{itemize}\tightlist\normalsize
+        \item {\color{Amber!80!black}\textbf{LLM-as-an-Optimizer:}} Dùng LLM để tối ưu prompt
+        \item {\color{Amber!80!black}\textbf{EvoPrompt:}} Dùng thuật toán tiến hoá.
+        \item {\color{Amber!80!black}\textbf{RL-based Prompting:}} Dùng RL huấn luyện một mô hình
+              nhỏ để sinh ra chuỗi token prompt giúp tối đa hóa phần thưởng.
+        \item {\color{Amber!80!black}\textbf{Hệ thống có nhiều LLM (Compound AI System):}}
+          \begin{itemize}\tightlist\normalsize
+            \item \textbf{Tối ưu đồng bộ} cả câu chỉ dẫn lẫn bộ mẫu few-shot cho toàn bộ
                   pipeline gồm nhiều module LLM nối tiếp nhau. (DSPy, MIPROv2).
           \end{itemize}
       \end{itemize}
@@ -130,12 +115,12 @@
 
 % ------------------------------------------------------------------ 11
 \begin{frame}{1.2\quad Phương pháp cho DTA}
-  \textbf{Hướng tối ưu tham số mô hình ($\theta$)}
+  \textbf{Hướng tối ưu tham số mô hình ({\color{PaperGreen}$\theta$})}
   \begin{itemize}\tightlist
     \item Full Fine-Tuning (FFT)
     \item Parameter-Efficient Fine-Tuning (PEFT): Đóng băng gần như toàn bộ mô hình gốc,
           chỉ huấn luyện số lượng tham số $\ll$ tổng số tham số.
-      \begin{itemize}\tightlist
+      \begin{itemize}\tightlist\normalsize
         \item Reparameterization: LoRa, QLoRa, \dots
         \item Adapters
         \item Prefix-Tuning / Prompt-Tuning
@@ -144,59 +129,61 @@
 \end{frame}
 
 % ------------------------------------------------------------------ 12
-\begin{frame}{1.3\quad Hạn chế của từng phương pháp}{Hạn chế của hướng Prompt}
+\begin{frame}{1.3\quad Hạn chế của từng phương pháp}
+  \Sub{Hạn chế của hướng Prompt:}
   \begin{itemize}\tightlist
-    \item In Context Learning thủ công:
-      \begin{itemize}\tightlist
-        \item Phụ thuộc vào kinh nghiệm thử-sai, cách diễn đạt câu chữ và thứ tự sắp
-              xếp ví dụ.
+    \item \textbf{In Context Learning thủ công:}
+      \begin{itemize}\tightlist\normalsize
+        \item Phụ thuộc vào kinh nghiệm thử-sai, cách diễn đạt câu chữ và thứ tự sắp xếp
+              ví dụ.
         \item Không biết đưa ví dụ few-shot nào phù hợp.
         \item Hệ thống gồm nhiều LLMs (Compound AI System) thì sẽ rất khó để chỉnh tay
               tất cả.
       \end{itemize}
   \end{itemize}
-  \vspace{0.3em}
-  $\rightarrow$ Automated Optimization ra đời.
+  \Takeaway{$\rightarrow$ Automated Optimization ra đời.}
 \end{frame}
 
 % ------------------------------------------------------------------ 13
-\begin{frame}{1.3\quad Hạn chế của từng phương pháp}{Hạn chế của Automated Optimization Prompt}
-  \begin{itemize}\tightlist
+\begin{frame}{1.3\quad Hạn chế của từng phương pháp}
+  \Sub{Hạn chế của Automated Optimization Prompt:}
+  \begin{itemize}\setlength{\itemsep}{0.6em}
     \item Tốn nhiều lượt chạy (Rollout) mới tìm được prompt tốt.\\
-          $\rightarrow$ Chi phí về Rollout Budget
+          $\rightarrow$ Chi phí về \textbf{Rollout Budget}
     \item Prompt bị phình to (Các pp sẽ overfit bằng cách gom nhiều ví dụ few-shot vào
           để tăng điểm)\\
-          $\rightarrow$ Chi phí về Inference Token Budget.
+          $\rightarrow$ Chi phí về \textbf{Inference Token Budget}.
   \end{itemize}
-  \vspace{0.4em}
-  Phương pháp GEPA sẽ giải quyết 2 vấn đề trên.
+  \Takeaway{Phương pháp \textbf{GEPA} sẽ giải quyết 2 vấn đề trên.}
 \end{frame}
 
 % ------------------------------------------------------------------ 14
-\begin{frame}{1.3\quad Hạn chế của từng phương pháp}{Hạn chế của PEFT}
+\begin{frame}{1.3\quad Hạn chế của từng phương pháp}
+  \Sub{Hạn chế của PEFT}
   \begin{itemize}\tightlist
     \item Dù PEFT đã cắt giảm mạnh chi phí VRAM so với Full Fine-Tuning và giữ được chi
           phí suy luận thấp nhưng:
-      \begin{itemize}\tightlist
-        \item Chi phí thích nghi lặp lại theo từng tác vụ: Bản chất của PEFT truyền
-              thống vẫn là huấn luyện chuyên biệt cho từng bài toán.
-        \item Zero-shot Adaption: Khác với Prompting có thể chuyển sang tác vụ mới ngay
-              lập tức chỉ bằng vài dòng mô tả, PEFT không thể phản ứng tức thời khi chưa
-              có dữ liệu và thời gian train.
+      \begin{itemize}\setlength{\itemsep}{0.5em}\normalsize
+        \item {\color{Amber!80!black}Chi phí thích nghi lặp lại theo từng tác vụ:} Bản chất
+              của PEFT truyền thống vẫn là huấn luyện chuyên biệt cho từng bài toán.
+        \item {\color{Amber!80!black}Zero-shot Adaption:} Khác với Prompting có thể chuyển
+              sang tác vụ mới ngay lập tức chỉ bằng vài dòng mô tả, PEFT không thể phản
+              ứng tức thời khi chưa có dữ liệu và thời gian train.
       \end{itemize}
   \end{itemize}
 \end{frame}
 
 % ------------------------------------------------------------------ 15
 \begin{frame}{1.3\quad Hạn chế của từng phương pháp}
+  \vspace{0.4em}
   \justifying
-  Làm sao để giữ được ưu thế cập nhật trọng số và tốc độ suy luận của LoRA, nhưng xóa bỏ
-  hoàn toàn chi phí dữ liệu và thời gian huấn luyện lại mỗi khi gặp tác vụ mới?
+  {\large Làm sao để giữ được ưu thế cập nhật trọng số và tốc độ suy luận của LoRA, nhưng
+  xóa bỏ hoàn toàn chi phí dữ liệu và thời gian huấn luyện lại mỗi khi gặp tác vụ mới?}
 
-  \vspace{0.6em}
-  \begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.6em]{block title alerted}
-    $\rightarrow$ Text-to-LoRA giải quyết nút thắt này bằng kiến trúc Hypernetwork, cho
-    phép sinh trực tiếp ma trận trọng số LoRA ngay từ văn bản mô tả tác vụ chỉ trong
+  \vspace{1.2em}
+  \begin{beamercolorbox}[wd=\linewidth,sep=0.7em]{block body alerted}
+    $\rightarrow$ \textbf{Text-to-LoRA} giải quyết nút thắt này bằng kiến trúc Hypernetwork,
+    cho phép sinh trực tiếp ma trận trọng số LoRA ngay từ văn bản mô tả tác vụ chỉ trong
     1 lượt chạy xuôi.
   \end{beamercolorbox}
 \end{frame}

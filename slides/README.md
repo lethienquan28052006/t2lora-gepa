@@ -15,6 +15,7 @@ parts/
   03_t2l.tex          slide 33–54 (3. Text-to-LoRA)
   04_cost.tex         slide 55    (Chi phí và hạn chế)
   05_references.tex   rỗng — deck gốc không có slide tài liệu tham khảo
+figure/deck/          ảnh lấy nguyên từ slide gốc (pdfimages + cắt viền trắng)
 figure/t2l, gepa/     hình và bảng tách từ paper (vector, không phải ảnh chụp)
 source/               3 file PDF gốc (đề bài, paper T2L, paper GEPA)
 tools/crop_figures.py sinh lại toàn bộ figure/ từ source/*.pdf
@@ -47,5 +48,6 @@ File dùng đường dẫn tương đối, font mặc định của TeX Live, t�
 
 ## Ghi chú
 
-- `figure/` được tạo tự động; đừng sửa tay, sửa toạ độ trong `tools/crop_figures.py` rồi chạy `make figures`.
-- Bảng trong các slide 3.4 là **bảng tách từ paper** (Bảng 1, 2, 3 của T2L) để giữ nguyên số liệu như paper in.
+- `figure/deck/` là ảnh lấy từ `source/slide-cs222.pptx.pdf`, không do script sinh ra.
+- `figure/t2l`, `figure/gepa` được tạo tự động; đừng sửa tay, sửa toạ độ trong `tools/crop_figures.py` rồi chạy `make figures`.
+- Slide 52 dùng Bảng 1 dạng vector từ paper; slide 53, 54 dùng ảnh bảng của slide gốc (bản crop Bảng 3 cũ bị cắt mất cột).

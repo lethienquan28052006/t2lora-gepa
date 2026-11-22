@@ -8,7 +8,7 @@
 %  Overleaf: upload the zip produced by `make zip` and set the compiler to
 %  XeLaTeX. Every path here is relative, so the folder compiles as-is.
 %=======================================================================
-\documentclass[aspectratio=169,10pt]{beamer}
+\documentclass[aspectratio=169,11pt,t,xcolor={dvipsnames,table}]{beamer}
 
 % ---------------------------- Encodings & fonts ------------------------
 \usepackage{fontspec}
@@ -22,7 +22,7 @@
 \usepackage{booktabs}
 \usepackage{ragged2e}
 \usepackage{graphicx}
-\usepackage[dvipsnames,table]{xcolor}
+% xcolor is loaded by beamer with the options given to \documentclass
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,shapes.geometric}
 
@@ -34,11 +34,11 @@
 
 \setbeamertemplate{caption}[numbered]
 \setbeamertemplate{navigation symbols}{}
-\setbeamersize{text margin left=0.55cm, text margin right=0.55cm}
-\newlength{\sidemargin}\setlength{\sidemargin}{0.55cm}
+\setbeamersize{text margin left=0.7cm, text margin right=0.7cm}
+\newlength{\sidemargin}\setlength{\sidemargin}{0.7cm}
 \setlength{\leftmargini}{1.1em}
 \setlength{\leftmarginii}{1.0em}
-\setlength{\parskip}{0.15em}
+\setlength{\parskip}{0.25em}
 
 % ---------------------------- Theme ------------------------------------
 \usetheme{default}
@@ -67,13 +67,15 @@
 \setbeamercolor{caption name}{fg=Muted}
 \setbeamercolor{page number in head/foot}{fg=Muted}
 
-\setbeamerfont{normal text}{size=\small}
-\setbeamerfont{frametitle}{size=\normalsize,series=\bfseries}
+\setbeamerfont{normal text}{size=\normalsize}
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
 \setbeamerfont{title}{size=\LARGE,series=\bfseries}
 \setbeamerfont{subtitle}{size=\large}
 \setbeamerfont{block title}{size=\small,series=\bfseries}
 \setbeamerfont{block body}{size=\small}
-\setbeamerfont{itemize/enumerate body}{size=\small}
+\setbeamerfont{itemize/enumerate body}{size=\normalsize}
+\setbeamerfont{itemize/enumerate subbody}{size=\small}
+\setbeamerfont{itemize/enumerate subsubbody}{size=\small}
 \setbeamerfont{caption}{size=\scriptsize}
 \setbeamerfont{footline}{size=\scriptsize}
 
@@ -81,29 +83,32 @@
 \setbeamertemplate{itemize subitem}{\usebeamercolor[fg]{itemize subitem}\scriptsize\hbox to 1.1em{$\bullet$\hfil}}
 \setbeamertemplate{enumerate item}{\color{Navy}\insertenumlabel.}
 
-% ---------------------------- Frame title with accent rule -------------
+% ---------------------------- Frame title with accent rule + logo ------
 \setbeamertemplate{frametitle}{%
-  \vspace*{0.30em}%
-  {\usebeamercolor[fg]{frametitle}\usebeamerfont{frametitle}\insertframetitle}%
-  \ifx\insertframesubtitle\empty\else
-    \hspace{0.55em}{\normalfont\small\color{Muted}\insertframesubtitle}%
-  \fi
-  \par\nobreak\vspace{0.18em}%
-  \noindent{\color{Amber}\rule{\textwidth}{1.1pt}}%
-  \par\vspace{0.10em}%
+  \vspace*{0.45em}%
+  \begin{minipage}[b]{\dimexpr\textwidth-0.9cm\relax}
+    {\usebeamercolor[fg]{frametitle}\usebeamerfont{frametitle}\insertframetitle}%
+    \ifx\insertframesubtitle\empty\else
+      \hspace{0.6em}{\normalfont\normalsize\color{NavySoft}\insertframesubtitle}%
+    \fi
+  \end{minipage}\hfill
+  \raisebox{-0.1em}{\includegraphics[height=0.62cm]{figure/deck/uit_logo}}%
+  \par\nobreak\vspace{0.2em}%
+  \noindent{\color{Amber}\rule{\textwidth}{1.2pt}}%
+  \par\vspace{0.35em}%
 }
 
 % ---------------------------- Footer -----------------------------------
 \setbeamertemplate{footline}{%
   \leavevmode%
   \hbox{%
-    \begin{beamercolorbox}[wd=.325\paperwidth,ht=2.2ex,dp=1.1ex,left]{page number in head/foot}%
+    \begin{beamercolorbox}[wd=.2\paperwidth,ht=2.2ex,dp=1.1ex,left]{page number in head/foot}%
       \hspace*{\sidemargin}Nhóm 5 --- UIT%
     \end{beamercolorbox}%
-    \begin{beamercolorbox}[wd=.345\paperwidth,ht=2.2ex,dp=1.1ex,center]{page number in head/foot}%
-      CS222 --- Prompting \& PEFT%
+    \begin{beamercolorbox}[wd=.6\paperwidth,ht=2.2ex,dp=1.1ex,center]{page number in head/foot}%
+      CS222 - Seminar - Prompting and PEFT - Group 5%
     \end{beamercolorbox}%
-    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.2ex,dp=1.1ex,right]{page number in head/foot}%
+    \begin{beamercolorbox}[wd=.2\paperwidth,ht=2.2ex,dp=1.1ex,right]{page number in head/foot}%
       \insertframenumber{}\,/\,\inserttotalframenumber\hspace*{\sidemargin}%
     \end{beamercolorbox}}%
   \vspace*{0.2ex}%
@@ -125,9 +130,9 @@
 
 % One-line conclusion, anchored under the content of a frame.
 \newcommand{\Takeaway}[1]{%
-  \par\vspace{0.3em}%
+  \par\vspace{0.8em}%
   \noindent\begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.45em]{block title alerted}
-    \raggedright\footnotesize\emergencystretch=1.5em \textbf{Điểm chốt.}~#1
+    \raggedright\normalsize\emergencystretch=1.5em #1
   \end{beamercolorbox}%
 }
 
@@ -135,7 +140,7 @@
 \newcommand{\Ask}[1]{%
   \par\vspace{0.3em}%
   \noindent\begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.45em]{block body alerted}
-    \raggedright\footnotesize\textbf{\color{Amber!70!black}Câu hỏi.}~#1
+    \raggedright\normalsize\textbf{\color{Amber!70!black}?}~~#1
   \end{beamercolorbox}%
 }
 
@@ -154,6 +159,39 @@
 \newcommand{\Win}[1]{{\color{PaperGreen}\textbf{#1}}}
 \newcommand{\Dim}[1]{{\color{Muted}#1}}
 \newcommand{\cell}[1]{\ensuremath{#1}}
+
+% An image taken from the original deck (figure/deck/), no caption.
+%   \DeckFig[max height as fraction of \textheight]{name}{width}
+\newcommand{\DeckFig}[3][0.7]{%
+  \includegraphics[width=#3,height=#1\textheight,keepaspectratio]{figure/deck/#2}}
+
+% Small grey sub-heading inside a frame (the "2.2.1 GRPO" lines of the deck).
+\newcommand{\Sub}[1]{{\color{NavySoft}\bfseries #1}\par\vspace{0.25em}}
+
+% Section divider on a navy background, as in the original deck.
+%   \SectionSlide{title}{tagline (may be empty)}{agenda lines}
+\newcommand{\SectionSlide}[3]{%
+  {\setbeamertemplate{footline}{}%
+  \begin{frame}[plain,c]
+    \begin{tikzpicture}[remember picture, overlay]
+      \fill[Navy] (current page.south west) rectangle (current page.north east);
+      \node[anchor=north east] at ([xshift=-0.5cm,yshift=-0.35cm]current page.north east)
+        {\includegraphics[height=0.75cm]{figure/deck/uit_logo}};
+      \node[anchor=south west, text=white!70, font=\scriptsize]
+        at ([xshift=0.7cm,yshift=0.35cm]current page.south west)
+        {CS222 - Seminar - Prompting and PEFT - Group 5};
+    \end{tikzpicture}
+    \begin{columns}[c,onlytextwidth]
+      \begin{column}{0.46\textwidth}
+        {\color{white}\LARGE\bfseries #1}\par\vspace{0.4em}
+        {\color{Amber}\rule{3.2cm}{1.6pt}}\par\vspace{0.5em}
+        {\color{Amber!80!white}\large\bfseries #2}
+      \end{column}
+      \begin{column}{0.5\textwidth}
+        \color{white}\normalsize #3
+      \end{column}
+    \end{columns}
+  \end{frame}}}
 
 % ---------------------------- Metadata ---------------------------------
 \title[CS222 --- Prompting \& PEFT]{Prompting \& PEFT: Phần ứng dụng}

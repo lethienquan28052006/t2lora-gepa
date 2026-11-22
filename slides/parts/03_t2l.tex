@@ -1,131 +1,117 @@
 %=======================================================================
-%  Slides 33-54 - PEFT: Text-to-LoRA (ICML 2025)
-%   Transcribed 1:1 from slide-cs222.pptx.pdf.
+%  Slides 33-54 - PEFT: Text-to-LoRA (ICML 2025)  (1:1 with slide-cs222.pptx.pdf)
 %=======================================================================
 \section{PEFT: Text-to-LoRA}
 
 % ------------------------------------------------------------------ 33
-{%
-\setbeamertemplate{footline}{}
-\begin{frame}[plain]
-  \vfill
-  \centering
-  {\color{Navy}\Large\bfseries Text-to-LoRA: Instant Transformer Adaption}\\[0.8em]
-  {\color{Amber}\rule{6cm}{1.4pt}}\\[0.8em]
-  {\color{Muted}\normalsize 3. PEFT: Text-to-LoRA}
-  \vfill
-\end{frame}
-}
+\SectionSlide{3. Text-to-LoRA}{Instant Transformer Adaption}{%
+  \large\bfseries PEFT\\[0.3em]
+  {\normalsize\mdseries\color{white!75} Text-to-LoRA: Instant Transformer Adaption --- ICML 2025}}
 
 % ------------------------------------------------------------------ 34
 \begin{frame}{3.1\quad Bài toán}
-  \Ask{Khi có một task mới cần model làm tốt. Bạn sẽ làm gì?}
-  \vspace{0.7em}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.46\textwidth}
-      \begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.7em]{block body}
-        \centering\normalsize Fine tune với LoRA cho mô hình ngôn ngữ trên task mới đó?
-      \end{beamercolorbox}
-    \end{column}
-    \begin{column}{0.46\textwidth}
-      \begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.7em]{block body}
-        \centering\normalsize Nếu đã có task 1 số task ta đã giải quyết rồi gần giống như
-        vậy thì sao?
-      \end{beamercolorbox}
-    \end{column}
-  \end{columns}
+  \vspace{0.2em}
+  {\large Khi có một task mới cần model làm tốt. Bạn sẽ làm gì?}
+  \vspace{1.6em}
+
+  \centering
+  \begin{tikzpicture}[font=\normalsize,
+      card/.style={fill=Panel, draw=Rule, rounded corners=4pt, text width=5.4cm,
+                   minimum height=1.9cm, align=center, inner sep=0.35cm}]
+    \node[card] (a) {Fine tune với LoRA cho mô hình ngôn ngữ trên task mới đó?};
+    \node[card, right=1.6cm of a, fill=AmberSoft, draw=Amber] (b)
+      {Nếu đã có task 1 số task ta đã giải quyết rồi gần giống như vậy thì sao?};
+    \draw[-{Stealth[length=3mm]}, line width=1.4pt, Amber] (a) -- (b);
+  \end{tikzpicture}
 \end{frame}
 
 % ------------------------------------------------------------------ 35
 \begin{frame}{3.1\quad Bài toán}
-  Khi có một task mới cần model làm tốt. Bạn sẽ làm gì?
-  \begin{itemize}\tightlist
-    \item Nén các task lại bằng SVD vào chung 1 ma trận\\
+  \leavevmode{\large Khi có một task mới cần model làm tốt. Bạn sẽ làm gì?}
+  \vspace{0.4em}
+  \begin{itemize}\setlength{\itemsep}{0.45em}
+    \item \textbf{Nén các task lại bằng SVD vào chung 1 ma trận}\\
           $\Rightarrow$ Tiết kiệm được bộ nhớ nhưng đi kèm với đó là hiệu suất bị giảm
-    \item Chọn 1 tập các task cũ gần giống với task mới để thực hiện\\
+    \item \textbf{Chọn 1 tập các task cũ gần giống với task mới để thực hiện}\\
           $\Rightarrow$ Bị giới hạn bởi các task cũ
-    \item Dùng hypernetwork để sinh ra adapter\\
-          $\Rightarrow$ Các phương pháp cũ: Input của HN thường là ID cố định của task
-          hoặc các câu hỏi từ task mới (Bị giới hạn bởi task cũ, tốn thời gian huấn luyện
-          và người dùng không kiểm soát được)
+    \item \textbf{Dùng hypernetwork để sinh ra adapter}\\
+          $\Rightarrow$ Các phương pháp cũ: Input của HN thường là ID cố định của task hoặc
+          các câu hỏi từ task mới (Bị giới hạn bởi task cũ, tốn thời gian huấn luyện và
+          người dùng không kiểm soát được)
   \end{itemize}
 \end{frame}
 
 % ------------------------------------------------------------------ 36
 \begin{frame}{3.1\quad Bài toán}
-  \vfill
   \centering
-  {\large Một mô hình có thể sinh adapter từ mô tả của người dùng}
-  \vfill
+  \vspace{0.3em}
+  {\large Một mô hình có thể sinh adapter từ mô tả của người dùng}\par
+  \vspace{0.3em}{\color{Rule}\rule{0.9\linewidth}{0.8pt}}\par\vspace{0.8em}
+  \DeckFig[0.62]{t2l_arch}{0.92\linewidth}
 \end{frame}
 
 % ------------------------------------------------------------------ 37
-\begin{frame}{3.2\quad Một số công trình liên quan}{Hypernetwork}
-  {\footnotesize\color{Muted}\url{https://arxiv.org/abs/1609.09106}}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.5\textwidth}
-      \vspace{0.6em}
-      \normalsize Hypernetwork thực chất là 1 mạng sinh ra trọng số cho 1 mạng khác.
+\begin{frame}{3.2\quad Một số công trình liên quan}
+  \Sub{Hypernetwork --- {\normalfont\href{https://arxiv.org/abs/1609.09106}{\color{NavySoft}\underline{https://arxiv.org/abs/1609.09106}}}}
+  \vspace{0.6em}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.62\textwidth}
+      \centering\DeckFig[0.62]{hypernetwork}{\linewidth}
     \end{column}
-    \begin{column}{0.46\textwidth}
-      \centering
-      \begin{tikzpicture}[font=\footnotesize, node distance=0.45cm,
-          b/.style={draw=Navy, fill=Panel, rounded corners=2pt, minimum height=0.9cm,
-                    text width=2.3cm, align=center}]
-        \node[b] (a) {mạng 1};
-        \node[b, fill=Navy, text=white, right=1.2cm of a] (w) {trọng số};
-        \node[b, below=of w] (b) {mạng 2};
-        \draw[-{Stealth}, Navy] (a) -- (w);
-        \draw[-{Stealth}, Navy] (w) -- (b);
-      \end{tikzpicture}
+    \begin{column}{0.34\textwidth}
+      \begin{beamercolorbox}[wd=\linewidth,sep=0.7em]{block body}
+        \large Hypernetwork thực chất là 1 mạng sinh ra trọng số cho 1 mạng khác
+      \end{beamercolorbox}
     \end{column}
   \end{columns}
 \end{frame}
 
 % ------------------------------------------------------------------ 38
 \begin{frame}{3.2\quad Một số công trình liên quan}
-  \vfill
   \centering
-  \begin{beamercolorbox}[wd=0.82\linewidth,sep=0.9em]{block body}
-    \normalsize Thay vì cho hypernetwork sinh ra weights thì người ta có ý tưởng là sinh
-    ra các ma trận adapter
+  \DeckFig[0.5]{hyper_adapter}{0.9\linewidth}
+  \par\vspace{0.8em}
+  \begin{beamercolorbox}[wd=0.9\linewidth,sep=0.6em]{block body}
+    \centering Thay vì cho hypernetwork sinh ra weights thì người ta có ý tưởng là sinh ra
+    các ma trận adapter
   \end{beamercolorbox}
-  \vfill
 \end{frame}
 
 % ------------------------------------------------------------------ 39
 \begin{frame}{3.3\quad T2L}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.47\textwidth}
-      \justifying
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.42\textwidth}
+      \centering\DeckFig[0.74]{t2l_train}{\linewidth}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      \justifying\large
       Cụ thể hơn, Khi có 1 task mới, T2L sẽ dùng mô tả của 1 task đó (được sinh từ GPT4
       mini) để làm input cho hypernetwork, từ đó sinh ra các ma trận adapter phục vụ cho
       các mô hình ngôn ngữ thực hiện task mới này.
-    \end{column}
-    \begin{column}{0.49\textwidth}
-      \includegraphics[width=\linewidth,height=0.55\textheight,keepaspectratio]{figure/t2l/fig1_train}
-      \par\vspace{0.2em}{\centering\color{Muted}\scriptsize Hình 1 --- Text-to-LoRA (ICML 2025)}
     \end{column}
   \end{columns}
 \end{frame}
 
 % ------------------------------------------------------------------ 40
 \begin{frame}{3.3\quad T2L}{Module 1}
+  \centering\DeckFig[0.3]{fgw}{0.6\linewidth}\par
+  \vspace{0.6em}
+  \raggedright
   \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.47\textwidth}
+    \begin{column}{0.4\textwidth}
       {\large $W = g(\,f(z)\,)$}
-      \begin{itemize}\tightlist\footnotesize
+      \begin{itemize}\tightlist
         \item $W$ là ma trận cần sinh
         \item $g()$ là hypernetwork
         \item $z$ là mô tả của task
         \item $f()$ là text encoder
       \end{itemize}
     \end{column}
-    \begin{column}{0.49\textwidth}
+    \begin{column}{0.56\textwidth}
       \textbf{Vấn đề:}
-      \begin{itemize}\tightlist\footnotesize
-        \item Nếu để im $W$ ($N\times N$) ở đầu ra thì số parameter của lớp FC sẽ khổng
-              lồ $\rightarrow$ cặp ma trận $(A,B)$
+      \begin{itemize}\tightlist
+        \item Nếu để im $W$ ($N\times N$) ở đầu ra thì số parameter của lớp FC sẽ khổng lồ
+              $\rightarrow$ cặp ma trận $(A,B)$
         \item Không chỉ sinh mỗi 1 cặp $(A,B)$
       \end{itemize}
     \end{column}
@@ -134,192 +120,200 @@
 
 % ------------------------------------------------------------------ 41
 \begin{frame}{3.3\quad T2L}{Module 1}
+  \centering\DeckFig[0.36]{module1_pairs}{0.7\linewidth}\par
+  \raggedright\small
   \textbf{Vấn đề:}
-  \begin{itemize}\tightlist
+  \begin{itemize}\tightlist\small
     \item Lúc này số tham số đầu ra tiếp tục quá lớn.
     \item Ví dụ ở mistral-7B có 32 lớp transformer $\rightarrow$ cần 64 cặp ma trận
           $(A,B)$. Ta cho lớp hidden cuối cùng của hypernetwork là 512 thì lớp FC cho
           output của hypernetwork cần $\sim$ 1,7 tỷ parameter quá lớn.
   \end{itemize}
-  \vspace{0.4em}
-  $\Rightarrow$ Ta thêm input bằng 2 thuộc tính là đó là layer thứ mấy và đó là module
-  key hay value.
+  \vspace{0.2em}
+  $\Rightarrow$ Ta thêm input bằng 2 thuộc tính là đó là \textbf{layer thứ mấy} và đó là
+  \textbf{module key hay value}.
 \end{frame}
 
 % ------------------------------------------------------------------ 42
 \begin{frame}{3.3\quad T2L}{Module 1}
-  \begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.6em]{block body}
-    \centering\large
-    $\Delta W_{m,l} = h_\theta\big(\operatorname{concat}[\,f(z),\ E[m],\ E[l]\,]\big)$
-  \end{beamercolorbox}
-  \vspace{0.4em}
-  Khi này số tham số của mô hình chỉ còn khoảng $\sim$55M.
+  \centering\DeckFig[0.4]{module1_concat}{0.7\linewidth}\par
+  {\normalsize $\Delta W_{m,l} = h_\theta\big(\operatorname{concat}[\,f(z),\ E[m],\ E[l]\,]\big)$}\par
   \vspace{0.3em}
-
-  Nhưng mà đầu ra chỉ có 1 cặp $(A,B)$ thì sao nhỉ?
-  \vspace{0.3em}
-
+  \raggedright\small
+  Khi này số tham số của mô hình chỉ còn khoảng \textbf{$\sim$55M}.\\
+  \textbf{Nhưng mà đầu ra chỉ có 1 cặp $(A,B)$ thì sao nhỉ?}\\
   $\Rightarrow$ Vì hypernetwork chạy rất nhanh (vài chục mili giây) nên việc chạy 1
   batchsize bao gồm nhiều lần chạy để cho ra đủ 64 cặp $(A,B)$ này là hoàn toàn khả thi.
 \end{frame}
 
 % ------------------------------------------------------------------ 43
 \begin{frame}{3.3\quad T2L}{Module 1}
-  \vfill
-  \centering
-  \begin{beamercolorbox}[wd=0.84\linewidth,sep=0.9em]{block body alerted}
-    \normalsize Vậy nếu ta không sinh ra cặp $(A,B)$ mà sinh ra từng ma trận hoặc đơn giản
-    chỉ là hàng thì sao?
+  \begin{beamercolorbox}[wd=\linewidth,sep=0.6em]{block body alerted}
+    Vậy nếu ta không sinh ra cặp $(A,B)$ mà sinh ra từng ma trận hoặc đơn giản chỉ là hàng
+    thì sao?
   \end{beamercolorbox}
-  \vfill
+  \vspace{1em}
+  \centering\DeckFig[0.55]{t2l_arch}{0.86\linewidth}
 \end{frame}
 
 % ------------------------------------------------------------------ 44
 \begin{frame}{3.3\quad T2L}{Module 1}
-  \centering
-  \begin{tabular}{@{}l l l c r@{}}
+  \centering\DeckFig[0.42]{t2l_arch}{0.72\linewidth}\par
+  \vspace{0.8em}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}c l l r r@{}}
     \toprule
-    & Output & Add input & batch size & Tham số \\
+    & \textbf{Output} & \textbf{Add input} & \textbf{batch size} & \textbf{Tham số} \\
     \midrule
-    L & cả A và B    & (không có)    & 64   & 55M \\
-    M & A hoặc B     & A/B           & 128  & 34M \\
-    S & một hàng     & A/B và hàng   & 1024 & 5M \\
+    \textbf{L} & cả A và B & (không có)  & 64   & 55M \\
+    \textbf{M} & A hoặc B  & A/B         & 128  & 34M \\
+    \textbf{S} & một hàng  & A/B và hàng & 1024 & 5M \\
     \bottomrule
   \end{tabular}
 \end{frame}
 
 % ------------------------------------------------------------------ 45
 \begin{frame}{3.3\quad T2L}{Module 2}
-  \textbf{Câu hỏi:}\\
-  \begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.5em]{block body}
-    \footnotesize\itshape
-    Toulouse has twice as many sheep as Charleston. Charleston has 4 times as many sheep
-    as Seattle. How many sheep do Toulouse, Charleston, and Seattle have together if
+  \textbf{Câu hỏi:}
+  \begin{beamercolorbox}[wd=\linewidth,sep=0.6em]{block body}
+    \itshape Toulouse has twice as many sheep as Charleston. Charleston has 4 times as many
+    sheep as Seattle. How many sheep do Toulouse, Charleston, and Seattle have together if
     Seattle has 20 sheep?
   \end{beamercolorbox}
-  \vspace{0.5em}
-  \textbf{Trả lời của baseline:}\\
-  \dots
-  \vspace{0.3em}
-
-  So, Toulouse, Charleston, and Seattle together have 240 sheep.
+  \vspace{1em}
+  \textbf{Trả lời của baseline:}
+  \begin{beamercolorbox}[wd=\linewidth,sep=0.6em]{block body}
+    \dots\\
+    So, Toulouse, Charleston, and Seattle together have \colorbox{red!20}{240 sheep.}
+  \end{beamercolorbox}
 \end{frame}
 
 % ------------------------------------------------------------------ 46
 \begin{frame}{3.3\quad T2L}{Module 2}
-  \textbf{Mô tả cho hypernetwork}
-  \begin{itemize}\tightlist
-    \item Chất lượng kém
-    \item Theo hướng toán học
-    \item Theo hướng lập trình
-  \end{itemize}
-  \vspace{0.2em}
-  \FigureFull[0.44]{t2l/fig4_qualitative}{Hình 4 --- Text-to-LoRA (ICML 2025)}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.4\textwidth}
+      \vspace{0.6em}
+      \textbf{Mô tả cho hypernetwork}
+      \begin{itemize}\setlength{\itemsep}{0.4em}
+        \item Chất lượng kém
+        \item Theo hướng toán học
+        \item Theo hướng lập trình
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.56\textwidth}
+      \centering\DeckFig[0.74]{qualitative}{\linewidth}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 % ------------------------------------------------------------------ 47
 \begin{frame}{3.3\quad T2L}{Module 3}
-  Ở đây hàm $f()$ là text encoder và T2L dùng gte-large-en.
-  \vspace{0.4em}
-
+  \centering\DeckFig[0.24]{fgw}{0.5\linewidth}\par
+  \vspace{0.3em}\raggedright
+  Ở đây hàm $f()$ là text encoder và T2L dùng \textbf{gte-large-en}.\\
   \textbf{Tại sao không dùng text encoder của LM mà phải dùng text encoder riêng?}
-  \vspace{0.3em}
-
-  Tác giả có lập luận rằng ở các phương pháp khác như HINT hay HyperTune thì dùng text
-  encoder ngoài cũng tăng hiệu quả.
+  \vspace{0.5em}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \centering\DeckFig[0.3]{table4_encoder}{\linewidth}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      Tác giả có lập luận rằng ở các phương pháp khác như HINT hay HyperTune thì dùng text
+      encoder ngoài cũng tăng hiệu quả
+    \end{column}
+  \end{columns}
 \end{frame}
 
 % ------------------------------------------------------------------ 48
 \begin{frame}{3.3\quad T2L}{Module 3}
+  \centering\DeckFig[0.32]{fgw}{0.6\linewidth}\par
+  \vspace{1em}\raggedright
   Vậy tại sao là gte-large-en mà không phải mô hình khác.
   \vspace{0.4em}
-
-  Tại thời điểm tạo ra paper kiến trúc gte-large-en có hiệu năng cực kỳ mạnh và kích
-  thước nhẹ ($\sim$400M).
+  \begin{beamercolorbox}[wd=\linewidth,sep=0.6em]{block body}
+    Tại thời điểm tạo ra paper kiến trúc gte-large-en có hiệu năng cực kỳ mạnh và kích
+    thước nhẹ ($\sim$400M)
+  \end{beamercolorbox}
 \end{frame}
 
 % ------------------------------------------------------------------ 49
 \begin{frame}{3.3\quad T2L}{Module 4}
   \Ask{Các bạn nghĩ mô hình hypernetwork này sẽ được train như nào?}
-  \vspace{0.7em}
-  \textbf{Reconstruction:}
-  \begin{itemize}\tightlist
-    \item Train sẵn task đó để ra các adapter
-    \item Khi hypernetwork tạo ra các adapter sẽ dùng hàm MSE để cập nhật lại cho
-          hypernetwork
-  \end{itemize}
+  \vspace{0.8em}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.4\textwidth}
+      \textbf{Reconstruction:}
+      \begin{itemize}\setlength{\itemsep}{0.4em}
+        \item Train sẵn task đó để ra các adapter
+        \item Khi hypernetwork tạo ra các adapter sẽ dùng hàm MSE để cập nhật lại cho
+              hypernetwork
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.57\textwidth}
+      \centering\DeckFig[0.6]{recon}{\linewidth}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 % ------------------------------------------------------------------ 50
 \begin{frame}{3.3\quad T2L}{Module 4}
-  \textbf{SFT:}
-  \begin{itemize}\tightlist
-    \item hypernetwork sinh ra các adapter, gắn adapter này vào LM (frozen) để nó sinh ra
-          output cho câu hỏi, từ đó dùng CE để tính Loss rồi cập nhật lại cho hypernetwork
-  \end{itemize}
+  \vspace{0.8em}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.4\textwidth}
+      \textbf{SFT:}
+      \begin{itemize}
+        \item hypernetwork sinh ra các adapter, gắn adapter này vào LM (frozen) để nó sinh
+              ra output cho câu hỏi, từ đó dùng CE để tính Loss rồi cập nhật lại cho
+              hypernetwork
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.57\textwidth}
+      \centering\DeckFig[0.7]{sft}{\linewidth}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 % ------------------------------------------------------------------ 51
 \begin{frame}{3.3\quad T2L}{Module 4}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.48\textwidth}
-      \centering
-      \begin{tikzpicture}[font=\footnotesize, node distance=0.45cm,
-          b/.style={draw=Navy, fill=Panel, rounded corners=2pt, minimum height=0.8cm,
-                    text width=2.6cm, align=center}]
-        \node[b] (t) {Train sẵn task};
-        \node[b, below=of t] (h) {hypernetwork};
-        \node[b, below=of h] (a) {adapter};
-        \node[b, below=of a] (l) {MSE};
-        \foreach \x in {t,h,a} \draw[-{Stealth}, Navy] (\x) -- (\x.south |- \x.south);
-        \draw[-{Stealth}, Navy] (t) -- (h);
-        \draw[-{Stealth}, Navy] (h) -- (a);
-        \draw[-{Stealth}, Navy] (a) -- (l);
-        \draw[-{Stealth}, Amber!80!black, dashed] (l.west) .. controls ++(-0.9,0) and ++(-0.9,0) .. (h.west);
-      \end{tikzpicture}\\[0.3em]
-      {\bfseries reconstruction}
+      \centering{\bfseries\color{Navy} reconstruction}\\[0.2em]
+      \DeckFig[0.3]{recon}{\linewidth}
     \end{column}
     \begin{column}{0.48\textwidth}
-      \centering
-      \begin{tikzpicture}[font=\footnotesize, node distance=0.45cm,
-          b/.style={draw=Navy, fill=Panel, rounded corners=2pt, minimum height=0.8cm,
-                    text width=2.6cm, align=center}]
-        \node[b] (h) {hypernetwork};
-        \node[b, below=of h] (a) {adapter};
-        \node[b, below=of a] (l) {LM (frozen)};
-        \node[b, below=of l] (o) {CE loss};
-        \draw[-{Stealth}, Navy] (h) -- (a);
-        \draw[-{Stealth}, Navy] (a) -- (l);
-        \draw[-{Stealth}, Navy] (l) -- (o);
-        \draw[-{Stealth}, Amber!80!black, dashed] (o.west) .. controls ++(-0.9,0) and ++(-0.9,0) .. (h.west);
-      \end{tikzpicture}\\[0.3em]
-      {\bfseries SFT}
+      \centering{\bfseries\color{Navy} SFT}\\[0.2em]
+      \DeckFig[0.3]{sft}{\linewidth}
     \end{column}
   \end{columns}
-  \vspace{0.3em}
-  \justifying\footnotesize
-  Ở đây ta có thể thấy được SFT hiệu quả hơn Reconstruction. Nhưng tại sao lại như vậy?
-  \begin{itemize}\tightlist
-    \item Không đồng nhất của nghiệm tối ưu
-    \item MSE không biểu diễn được độ tốt của mô hình
-  \end{itemize}
+  \vspace{0.6em}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.42\textwidth}
+      \centering\DeckFig[0.24]{table6_recon_sft}{\linewidth}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      Ở đây ta có thể thấy được SFT hiệu quả hơn Reconstruction. Nhưng tại sao lại như vậy?
+      \begin{itemize}\tightlist
+        \item Không đồng nhất của nghiệm tối ưu
+        \item MSE không biểu diễn được độ tốt của mô hình
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 % ------------------------------------------------------------------ 52
 \begin{frame}{3.4\quad Experiment}{So với LoRA}
-  \FigureFull[0.66]{t2l/table1_recon}{Bảng 1 --- Text-to-LoRA (ICML 2025)}
+  \centering
+  \includegraphics[width=\linewidth,height=0.74\textheight,keepaspectratio]{figure/t2l/table1_recon}
 \end{frame}
 
 % ------------------------------------------------------------------ 53
 \begin{frame}{3.4\quad Experiment}{So với các phương pháp khác}
-  \FigureFull[0.16]{t2l/table2_zeroshot_a}{Bảng 2, phần "No Test-Time Adaptation" --- Text-to-LoRA (ICML 2025)}
-  \vspace{0.15em}
-  \FigureFull[0.16]{t2l/table2_zeroshot_b}{Bảng 2, phần "Zero-Shot Adaptation" --- Text-to-LoRA (ICML 2025)}
+  \centering
+  \includegraphics[width=\linewidth,height=0.74\textheight,keepaspectratio]{figure/deck/table2}
 \end{frame}
 
 % ------------------------------------------------------------------ 54
 \begin{frame}{3.4\quad Experiment}{Kết quả của L, M, S}
-  \FigureFull[0.2]{t2l/table3_scaling}{Bảng 3 --- Text-to-LoRA (ICML 2025)}
-  \vspace{0.1em}
-  \FigureFull[0.26]{t2l/fig1_scaling}{Hình 1 (phải) --- Text-to-LoRA (ICML 2025)}
+  \centering
+  \includegraphics[width=\linewidth,height=0.74\textheight,keepaspectratio]{figure/deck/table3}
 \end{frame}
