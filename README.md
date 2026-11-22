@@ -221,6 +221,7 @@ uv run python scripts/make_tables.py --results /data/quan.lt/temp/t2l-mistral/re
 
 | document | contents |
 |---|---|
+| [`docs/report/t2l-gepa-opt-method.md`](docs/report/t2l-gepa-opt-method.md) | **method report for `t2l_gepa_opt`**: checkpoint, flow, reflection model, protocol, cost |
 | [`docs/report/t2l-gepa-comparison.md`](docs/report/t2l-gepa-comparison.md) | full methods + results for all three approaches |
 | [`docs/report/mistral/`](docs/report/mistral/) | Mistral accuracy and cost tables, adapter and serve configs |
 | [`docs/report/report.md`](docs/report/report.md) | the earlier Gemma-2B run |
