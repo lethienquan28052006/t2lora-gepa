@@ -14,7 +14,7 @@ We compared three ways of adapting Mistral-7B-Instruct-v0.2 to five benchmarks:
 |---|---|---|
 | **T2L** (`t2l_icl`) | weights: a LoRA generated from a task description | **+5.4 pp** |
 | **GEPA** (`gepa_3shot`) | prompt: an instruction evolved by reflective search | **+2.0 pp** |
-| **T2L + GEPA** (`desc_search`) | the *description* T2L reads, searched by GEPA | **+2.2 pp** *(2 tasks only; no better than the shipped description)* |
+| **T2L + GEPA** (`t2l_gepa_opt`) | the *prompt*, searched with the T2L adapter in the loop | **+6.5 pp** (best of all; +1.1 over T2L) |
 
 Three findings dominate:
 
@@ -135,7 +135,27 @@ compute.
 This is not the combination we report as "T2L+GEPA" — it is the control that showed a
 base-optimised prompt does not transfer to an adapted model (§5.4).
 
-### 3.7 `desc_search` — the actual T2L+GEPA combination
+### 3.7 `t2l_gepa_opt` — GEPA searches the prompt with the adapter in the loop (the combo)
+
+The adapter is generated once from the shipped description and then frozen. GEPA searches the
+**instruction**, and every rollout runs on `t2l_<task>` — so reflection sees the adapted
+model's failures, not the base model's.
+
+```
+t2l_<task>  (frozen, generated once, 14 MB)
+     │
+     ├── instruction ──► 3-shot + adapter ──► score + failure text
+     │                        ▲                        │
+     │                        └──── reflection ◄───────┘
+     ▼
+best prompt ──► 1,000 test items, greedy, still on the adapter
+```
+
+Implementation: `run_gepa(..., model="t2l_<task>")` (`src/t2lgepa/gepa_arm.py:169`) and the final
+scoring in `scripts/run_grid.py` use the same model. Budget 1,500 metric calls, `D_pareto` 300,
+seed instruction = the task's own rules, demos fixed at 3.
+
+### 3.8 `desc_search` — GEPA searches the description (alternative combination)
 
 Here GEPA searches the **task description**, and T2L turns each candidate description into a
 new adapter. The hypernetwork stays frozen; the search moves its *input*.
@@ -181,14 +201,14 @@ Concrete pieces:
 
 ### 4.1 Main table (accuracy on 1,000 test items per task)
 
-| task | base | t2l (0-shot) | **t2l_icl** | **gepa_3shot** | t2l_gepa (control) |
-|---|---|---|---|---|---|
-| gsm8k | 47.5 | 39.6 | **49.7** | 45.4 | 45.5 |
-| arc_challenge | 73.9 | 70.2 | 73.7 | 73.0 | 73.7 |
-| boolq | 82.4 | 85.2 | **86.1** | 83.3 | **86.2** |
-| hellaswag | 47.7 | 61.3 | **63.9** | 54.7 | **64.2** |
-| winogrande | 59.3 | 27.9 | **64.6** | 64.3 | 58.6 |
-| **mean Δ vs base** | | −5.3 | **+5.4** | **+2.0** | **+3.5** |
+| task | base | t2l (0-shot) | t2l_icl | gepa_3shot | t2l_gepa (A) | **t2l_gepa_opt (B)** |
+|---|---|---|---|---|---|---|
+| gsm8k | 47.5 | 39.6 | **49.7** | 45.4 | 45.5 | 49.6 |
+| arc_challenge | 73.9 | 70.2 | 73.7 | 73.0 | 73.7 | **74.2** |
+| boolq | 82.4 | 85.2 | **86.1** | 83.3 | **86.2** | 85.9 |
+| hellaswag | 47.7 | 61.3 | 63.9 | 54.7 | 64.2 | **65.9** |
+| winogrande | 59.3 | 27.9 | 64.6 | 64.3 | 58.6 | **67.8** |
+| **mean Δ vs base** | | −5.3 | +5.4 | +2.0 | +3.5 | **+6.5** |
 
 ### 4.2 T2L vs GEPA, task by task (paired bootstrap, 95% CI)
 
@@ -217,7 +237,7 @@ This is the cleanest result in the study. GEPA's instruction is worth about **no
 the three demonstrations it is given**, except on GSM8K, where reflection genuinely adds
 +5.5 pp. The "+2.0 pp over base" in §4.1 is mostly the demos.
 
-### 4.4 The combination
+### 4.4 Naive composition (control)
 
 | arm | gsm8k | arc_c | boolq | hellaswag | winogrande | mean Δ vs base |
 |---|---|---|---|---|---|---|
@@ -234,6 +254,36 @@ the three demonstrations it is given**, except on GSM8K, where reflection genuin
   final adapters scored 63.2 % and 48.0 % against 64.6 % and 49.7 % for the shipped ones.
 
 ---
+
+### 4.5 GEPA on top of the adapter (the combination that works)
+
+Against `t2l_icl`, paired bootstrap:
+
+| task | Δ | 95% CI |
+|---|---|---|
+| gsm8k | −0.1 | [−3.0, +2.8] |
+| arc_challenge | +0.5 | [−1.6, +2.6] |
+| boolq | −0.2 | [−1.7, +1.2] |
+| hellaswag | +2.0 | [−0.1, +4.1] |
+| winogrande | **+3.2** | [+0.8, +5.7] |
+| **mean** | **+1.1** | |
+
+1. **Co-optimisation is the difference.** The same idea applied to a base-model prompt (arm A)
+   *loses* 4–6 pp on two tasks; searching the prompt while the adapter is active *gains* +1.1 pp
+   on average and +3.2 pp on WinoGrande (CI excludes zero).
+2. **The gain lands where the mechanism predicts.** WinoGrande is the task where the adapter
+   ignored the answer format in zero-shot (27.9%); HellaSwag is where the adapter had the most
+   headroom. The two tasks where `t2l_icl` was already at its ceiling (GSM8K, BoolQ) do not move.
+3. **The search is cheap here.** The adapter answers directly, so rollouts generate ~3× fewer
+   tokens than on the base model: 147 s wall for WinoGrande, 1,236–1,380 metric calls, 6–20
+   reflection calls. Five tasks finished in about 30 minutes.
+4. **It is a modest gain, not a new regime.** +1.1 pp mean, significant on one of five tasks.
+   T2L does the heavy lifting; GEPA recovers a couple of points that the adapter's prompt-format
+   mismatch was costing.
+
+Gate note: GSM8K, BoolQ, HellaSwag and WinoGrande beat their seed program on `D_pareto`;
+ARC-Challenge did not (0.733 vs 0.739) and is reported as "found nothing", although its test
+score was still +0.5 pp over `t2l_icl`.
 
 ## 5. What we had to fix to make these numbers trustworthy
 

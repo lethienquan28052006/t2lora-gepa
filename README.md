@@ -19,14 +19,14 @@ changes the weights, the other changes the instruction.
 Five benchmarks from T2L's suite, 1,000 test items each, greedy decoding, seed 0.
 T2L checkpoint `trained_t2l/mistral_7b_t2l`, GEPA reflection via `deepseek-v4.1-flash`.
 
-| task | base | icl3 | t2l (0-shot) | **t2l_icl** | **gepa_3shot** | t2l_gepa (control) |
-|---|---|---|---|---|---|---|
-| gsm8k | 47.5 | 39.9 | 39.6 | **49.7** | 45.4 | 45.5 |
-| arc_challenge | 73.9 | **74.2** | 70.2 | 73.7 | 73.0 | 73.7 |
-| boolq | 82.4 | 83.4 | 85.2 | **86.1** | 83.3 | **86.2** |
-| hellaswag | 47.7 | 54.6 | 61.3 | **63.9** | 54.7 | **64.2** |
-| winogrande | 59.3 | 63.2 | 27.9 | **64.6** | 64.3 | 58.6 |
-| **mean Δ vs base** | | +0.9 | −5.3 | **+5.4** | **+2.0** | +3.5 |
+| task | base | icl3 | t2l (0-shot) | t2l_icl | gepa_3shot | t2l_gepa (A) | **t2l_gepa_opt (B)** |
+|---|---|---|---|---|---|---|---|
+| gsm8k | 47.5 | 39.9 | 39.6 | **49.7** | 45.4 | 45.5 | 49.6 |
+| arc_challenge | 73.9 | **74.2** | 70.2 | 73.7 | 73.0 | 73.7 | **74.2** |
+| boolq | 82.4 | 83.4 | 85.2 | **86.1** | 83.3 | **86.2** | 85.9 |
+| hellaswag | 47.7 | 54.6 | 61.3 | 63.9 | 54.7 | 64.2 | **65.9** |
+| winogrande | 59.3 | 63.2 | 27.9 | 64.6 | 64.3 | 58.6 | **67.8** |
+| **mean Δ vs base** | | +0.9 | −5.3 | +5.4 | +2.0 | +3.5 | **+6.5** |
 
 ### T2L vs GEPA, with paired 95% CIs
 
@@ -74,7 +74,25 @@ three tasks, significantly worse on two. On WinoGrande the share of outputs with
 extractable answer rises from 8.8% to 12.4% — adapter and instruction disagree about the
 format.
 
-**Description search (the real combination)** — GEPA searches the description, T2L turns each
+**GEPA on top of the adapter (the combination that works)** — the adapter is frozen and GEPA
+searches the instruction with that adapter serving every rollout:
+
+| task | base | t2l_icl | **t2l_gepa_opt** | Δ vs t2l_icl |
+|---|---|---|---|---|
+| gsm8k | 47.5 | 49.7 | 49.6 | −0.1 [−3.0, +2.8] |
+| arc_challenge | 73.9 | 73.7 | 74.2 | +0.5 [−1.6, +2.6] |
+| boolq | 82.4 | 86.1 | 85.9 | −0.2 [−1.7, +1.2] |
+| hellaswag | 47.7 | 63.9 | **65.9** | +2.0 [−0.1, +4.1] |
+| winogrande | 59.3 | 64.6 | **67.8** | **+3.2** [+0.8, +5.7] |
+| **mean** | | +5.4 | **+6.5** | **+1.1** |
+
+Co-optimising beats transferring a base-model prompt (arm A, which *loses* 4–6 pp on two tasks),
+and the gains land exactly where the mechanism predicts: WinoGrande, where the zero-shot adapter
+ignored the answer format, and HellaSwag, where it had the most headroom. Cheap, too — the
+adapter writes 3× fewer tokens, so five tasks took ~30 minutes (1,236–1,380 metric calls,
+6–20 reflection calls each).
+
+**Description search (the other direction, for completeness)** — GEPA searches the description, T2L turns each
 candidate into a new adapter (hypernetwork frozen), the adapter is loaded into the running
 vLLM server and scored:
 
@@ -115,10 +133,11 @@ The migration weights were verified bit-identical to `google/gemma-2-2b-it` (288
    WinoGrande) the prompt and demos do the work; on HellaSwag the adapter adds +16 pp that no
    prompt in our search reached. Where they tie (WinoGrande 64.6 vs 64.3) the gain is an answer
    convention, not a capability.
-4. **Combining is not free.** Optimising the two surfaces independently produces a prompt and
-   weights that disagree (control: −4.2 and −6.0 on two tasks). Searching the description is
-   the right shape, but with a 120-item selection set it cannot rise above the noise floor.
-   The next experiment is co-optimisation: GEPA running with the adapter in the loop.
+4. **Combining works only when the prompt is searched *with* the adapter.** Transferring a
+   base-model prompt to the adapted model loses 4–6 pp on two tasks; searching the prompt while
+   the adapter serves the rollouts adds +1.1 pp on average (+3.2 on WinoGrande, CI excludes
+   zero; +6.5 pp over base in total, the best number in the study). Searching the *description*
+   instead found nothing, and has a ~1.4 pp noise floor.
 
 ---
 
@@ -129,7 +148,8 @@ The migration weights were verified bit-identical to `google/gemma-2-2b-it` (288
 | base / icl3 | 0 | — |
 | **T2L** | 1 hypernetwork forward pass (~1 s; 0.04 s warm) | **14 MB LoRA** |
 | **GEPA** | ~1,250 rollouts + 7–18 reflection calls, 294–349 s GPU | prompt text |
-| **T2L+GEPA** | ~900 rollouts + 10 adapter generations, ~15 min | 10 LoRAs + description |
+| **T2L+GEPA (prompt search)** | ~1,300 rollouts, ~150–320 s per task | prompt text |
+| T2L+GEPA (description search) | ~900 rollouts + 10 adapter generations, ~15 min | 10 LoRAs + description |
 
 GPU-seconds over the five tasks for the non-GEPA arms: base 802, icl3 793, t2l 382, t2l_icl 415.
 The `t2l` arms generate ~3× fewer tokens because the adapter answers directly instead of
