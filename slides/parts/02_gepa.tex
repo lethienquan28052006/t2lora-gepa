@@ -1,1 +1,375 @@
-% placeholder - filled by a later task
+%=======================================================================
+%  Section 2 - Prompting: GEPA (ICLR 2026)
+%   2.1 Bài toán   2.2 Liên quan (GRPO, MIPROv2)   2.3 Pipeline
+%   2.5 Kết quả    2.6 Giới hạn
+%=======================================================================
+\section{Prompting: GEPA}
+
+% ------------------------------------------------------------------ 2.1
+\begin{frame}{2.1\quad Bài toán}{Tối ưu prompt cho một hệ thống nhiều module}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}\tightlist
+        \item Hệ thống gồm $k$ module LLM nối tiếp nhau
+              (truy xuất $\rightarrow$ suy luận $\rightarrow$ kiểm chứng);
+        \item Mỗi module $i$ được điều khiển bởi prompt $\pi_i$;
+        \item Một ứng viên của hệ thống là một \emph{tập} prompt
+              $\Phi=\{\pi_1,\pi_2,\dots,\pi_k\}$;
+        \item Toàn bộ trọng số gốc $\theta$ được \textbf{đóng băng}
+              $\Rightarrow$ chỉ tối ưu trên không gian \emph{văn bản rời rạc}.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\footnotesize, node distance=0.42cm,
+          mod/.style={draw=Navy, fill=Panel, rounded corners=2pt, minimum height=0.85cm, text width=3.1cm, align=center},
+          io/.style={draw=Rule, fill=white, rounded corners=2pt, minimum height=0.7cm, text width=3.1cm, align=center}]
+        \node[io] (q) {Câu hỏi $x$};
+        \node[mod, below=of q] (m1) {\textbf{Module 1: Truy xuất}\\[-0.15em]{\scriptsize $\pi_1$}};
+        \node[mod, below=of m1] (m2) {\textbf{Module 2: Suy luận}\\[-0.15em]{\scriptsize $\pi_2$}};
+        \node[mod, below=of m2] (m3) {\textbf{Module 3: Kiểm chứng}\\[-0.15em]{\scriptsize $\pi_3$}};
+        \node[io, below=of m3] (o) {Đáp án $y$};
+        \draw[-{Stealth}, Navy] (q) -- (m1);
+        \draw[-{Stealth}, Navy] (m1) -- (m2);
+        \draw[-{Stealth}, Navy] (m2) -- (m3);
+        \draw[-{Stealth}, Navy] (m3) -- (o);
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+  \Takeaway{Mục tiêu: tìm $\Phi^\ast$ tối đa hoá điểm trung bình trên tập validation với \emph{ít lượt chạy} nhất, và prompt không phình to.}
+\end{frame}
+
+% ------------------------------------------------------------------ 2.2
+\begin{frame}{2.2.1\quad Công trình liên quan --- GRPO}{Group Relative Policy Optimization}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}\tightlist
+        \item Với mỗi đầu vào $x$, mô hình sinh một nhóm $G$ câu trả lời
+              $\{o_1,\dots,o_G\}$;
+        \item Chấm thưởng cho từng câu: $\{r_1,\dots,r_G\}$;
+        \item Tính \textbf{lợi thế tương đối} trong nhóm:
+              \[ A_i=\frac{r_i-\operatorname{mean}(r)}{\operatorname{std}(r)} \]
+        \item Cập nhật $\theta$ để tăng xác suất các câu trả lời có $A_i>0$
+              (kèm ràng buộc KL với mô hình tham chiếu).
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, y=0.55cm, x=0.86cm]
+        \foreach \i/\r/\a in {1/0.2/-1.4, 2/0.35/-0.9, 3/0.45/-0.3, 4/0.5/0, 5/0.55/0.3, 6/0.7/0.9, 7/0.85/1.4}{%
+          \pgfmathsetmacro{\h}{0.6+\r*2.6}
+          \pgfmathparse{\a>0 ? 1 : (\a<0 ? -1 : 0)}
+          \ifdim\pgfmathresult pt>0.5pt\def\fillc{PaperGreen!70}\else
+            \ifdim\pgfmathresult pt<-0.5pt\def\fillc{Red!55}\else\def\fillc{Rule}\fi\fi
+          \fill[\fillc] (\i-0.3,0) rectangle (\i+0.3,\h);
+          \node[below] at (\i,0) {$o_\i$};
+          \node[above, inner sep=1pt] at (\i,\h) {$\r$};
+        }
+        \draw[dashed, Muted] (0.5,1.25) -- (7.5,1.25);
+        \node[font=\scriptsize, text=Muted, right] at (7.5,1.25) {mean};
+        \node[text=PaperGreen, font=\scriptsize] at (4.6,3.6) {\textbf{được đẩy lên}};
+        \node[text=Red!70!black, font=\scriptsize] at (1.9,3.6) {\textbf{bị đè xuống}};
+      \end{tikzpicture}
+      \par\vspace{0.3em}
+      {\scriptsize\color{Muted}Cùng $x$, các câu trên trung bình được tăng xác suất, các câu dưới bị giảm.}
+    \end{column}
+  \end{columns}
+  \vspace{0.2em}
+  \Takeaway{GRPO cần hàng chục nghìn rollout và GPU training để học từ \emph{một con số} thưởng.}
+\end{frame}
+
+\begin{frame}{2.2.1\quad Công trình liên quan --- GRPO}{Hạn chế}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.47\textwidth}
+      \begin{beamercolorbox}[wd=\linewidth,sep=0.6em]{block title}
+        \centering Chỉ học từ \emph{điểm thưởng vô hướng}
+      \end{beamercolorbox}
+      \vspace{0.4em}
+      \footnotesize\justifying
+      Một điểm $0$ hay $1$ không nói \emph{vì sao} sai: sai phép tính, sai định dạng,
+      hay thiếu một bước suy luận? Mô hình phải tự dò lại toàn bộ.
+    \end{column}
+    \begin{column}{0.49\textwidth}
+      \begin{beamercolorbox}[wd=\linewidth,sep=0.6em]{block title}
+        \centering \emph{Sample efficiency} thấp
+      \end{beamercolorbox}
+      \vspace{0.4em}
+      \footnotesize\justifying
+      Cần hàng chục nghìn lượt chạy thử và GPU huấn luyện đắt đỏ cho \emph{mỗi} tác vụ
+      --- và phải chạy lại từ đầu khi đổi mô hình.
+    \end{column}
+  \end{columns}
+  \vspace{0.6em}
+  \Takeaway{Nhận xét của GEPA: văn bản là một \emph{môi trường học} giàu hơn nhiều so với gradient từ phần thưởng thưa.}
+\end{frame}
+
+\begin{frame}{2.2.2\quad Công trình liên quan --- MIPROv2}{Tối ưu prompt cho Compound AI System}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}\tightlist
+        \item Thuộc nhánh tối ưu prompt tự động cho hệ thống nhiều bước;
+        \item Đóng băng $\theta$, chỉ tìm bộ \textbf{instruction} và
+              \textbf{ví dụ few-shot};
+        \item Là baseline mạnh mà GEPA so sánh trực tiếp.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{enumerate}\tightlist\footnotesize
+        \item \textbf{Bootstrapping}: chạy hệ thống trên dữ liệu mẫu, thu các cặp
+              few-shot \emph{thành công};
+        \item \textbf{Grounded proposal}: dùng LLM sinh nhiều ứng viên câu
+              chỉ dẫn dựa trên mô tả tác vụ và dữ liệu;
+        \item \textbf{Bayesian optimization}: đánh giá trên validation, chọn tổ hợp
+              (instruction $+$ few-shot) tốt nhất cho từng module.
+      \end{enumerate}
+    \end{column}
+  \end{columns}
+  \vspace{0.4em}
+  \Takeaway{Ba bước này tách rời \emph{viết} và \emph{chấm}: LLM đề xuất, nhưng không bao giờ đọc lý do sai để viết lại.}
+\end{frame}
+
+\begin{frame}{2.2.2\quad Công trình liên quan --- MIPROv2}{Hạn chế}
+  \begin{itemize}\tightlist
+    \item Vẫn dựa chủ yếu vào \textbf{điểm số tổng} (scalar metric)
+          $\Rightarrow$ bỏ phí thông tin chẩn đoán trong \emph{execution traces}:
+          log lỗi biên dịch, rubric bị trượt, chuỗi suy luận sai từ bước nào;
+    \item Xu hướng \textbf{nhồi nhiều ví dụ few-shot} để kéo điểm
+          $\Rightarrow$ prompt sinh ra rất dài, làm tăng \emph{inference token budget}
+          và độ trễ suy luận.
+  \end{itemize}
+  \vspace{0.5em}
+  \begin{center}
+  \begin{tikzpicture}[font=\footnotesize]
+    \node[draw=Amber!80!black, fill=AmberSoft, rounded corners=3pt, text width=12.2cm, align=left, inner sep=6pt]
+      {\textbf{Cả hai hạn chế đều là về \emph{tín hiệu học}:} GRPO và MIPROv2 nén một lần chạy
+       thành một con số. GEPA giữ lại \emph{toàn bộ văn bản} của lần chạy đó.};
+  \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+% ------------------------------------------------------------------ 2.3
+\begin{frame}{2.3\quad Pipeline GEPA}{Một vòng lặp, hai chiến lược tạo ứng viên}
+  \FigureFull[0.6]{gepa/fig3_pipeline}{Hình 3 trong paper GEPA: vòng lặp tổng thể, chọn lọc Pareto và hai chiến lược tạo ứng viên mới.}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.32\textwidth}
+      \footnotesize\textbf{\color{Navy}1. Chọn} một ứng viên từ biên Pareto, không phải ứng viên điểm cao nhất.
+    \end{column}
+    \begin{column}{0.32\textwidth}
+      \footnotesize\textbf{\color{Navy}2. Đề xuất} ứng viên mới bằng reflection hoặc bằng merge.
+    \end{column}
+    \begin{column}{0.32\textwidth}
+      \footnotesize\textbf{\color{Navy}3. Sàng} trên minibatch trước, chỉ khi điểm tăng mới đánh giá rộng.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{2.3.1\quad Chọn lọc trên biên Pareto}{Vì sao không chọn ứng viên điểm cao nhất}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      Chỉ giữ \emph{một} ứng viên có điểm trung bình cao nhất
+      $\Rightarrow$ mất đa dạng chiến lược và kẹt ở cực trị địa phương.
+
+      \vspace{0.35em}
+      Với mỗi mẫu $x_j\in\mathcal{D}_{\text{pareto}}$, GEPA tìm điểm cao nhất mà
+      quần thể $\mathcal{P}$ đạt được:
+      \[ s^\ast(x_j)=\max_{\Phi\in\mathcal{P}} s(\Phi,x_j) \]
+      \begin{itemize}\tightlist
+        \item chỉ giữ ứng viên đạt đỉnh $s^\ast(x_j)$ trên \emph{ít nhất một} mẫu
+              (loại bỏ ứng viên bị thống trị hoàn toàn);
+        \item xác suất chọn $\Phi$ tỉ lệ với \textbf{số mẫu} mà $\Phi$ đạt điểm cao nhất.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize]
+        \draw[->, Muted] (0,0) -- (4.4,0) node[right, font=\scriptsize] {mẫu $x_j$};
+        \draw[->, Muted] (0,0) -- (0,3.0) node[above, font=\scriptsize] {điểm};
+        \foreach \x in {0.6,1.5,2.5,3.5}{%
+          \draw[Muted!40] (\x,0.15) -- (\x,2.7);
+          \fill[Navy] (\x,2.7) circle (1.6pt);
+        }
+        \draw[Red!70!black, thick] (0.4,1.0) -- (3.7,1.35);
+        \node[Red!70!black, right, text width=1.9cm, align=left] at (3.75,1.1) {ứng viên bị thống trị};
+        \fill[PaperGreen] (0.6,2.7) circle (2.2pt);
+        \fill[PaperGreen] (1.5,2.55) circle (2.2pt);
+        \fill[PaperGreen] (2.5,2.65) circle (2.2pt);
+        \fill[PaperGreen] (3.5,2.45) circle (2.2pt);
+        \node[PaperGreen, above] at (2.1,2.85) {biên Pareto};
+      \end{tikzpicture}
+      \par\vspace{0.4em}
+      {\scriptsize\color{Muted}Ứng viên nằm trên biên $\Rightarrow$ được chọn để đột biến.}
+    \end{column}
+  \end{columns}
+  \Takeaway{Giữ đồng thời các \emph{chuyên gia} giải tốt những dạng bài con khác nhau: cân bằng khai thác (giỏi nhiều mẫu) và khám phá (giỏi ca khó).}
+\end{frame}
+
+\begin{frame}{2.3.1\quad Chọn lọc trên biên Pareto}{Bằng chứng: greedy và beam search đều thua}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.56\textwidth}
+      \FigureFull[0.55]{gepa/fig6_strategy}{Fig 6: trái là \emph{SelectBestCandidate} (TextGrad), phải là chọn theo Pareto; số ở mỗi đỉnh là mức điểm tốt nhất đạt được.}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \noindent\centering
+      \footnotesize
+      \begin{tabular}{@{}lcc@{}}
+        \toprule
+        Chiến lược & TB 4 task & $\Delta$ \\
+        \midrule
+        Baseline              & 48.84 & --- \\
+        SelectBestCandidate   & 54.89 & $+6.05$ \\
+        BeamSearch            & 53.95 & $+5.11$ \\
+        \textbf{GEPA (Pareto)} & \Win{61.28} & \Win{$+12.44$} \\
+        \bottomrule
+      \end{tabular}\\[0.3em]
+      {\scriptsize\color{Muted}Qwen3 8B, cùng harness, cùng ngân sách.}\\[0.8em]
+      \begin{tikzpicture}[font=\scriptsize]
+        \draw[->, Muted] (0,0) -- (3.6,0) node[right] {vòng lặp};
+        \draw[->, Muted] (0,0) -- (0,2.2);
+        \draw[Red!70!black, thick] (0.1,0.7) -- (0.6,1.8) -- (3.4,1.78);
+        \node[Red!70!black, above left, align=left, text width=1.8cm] at (1.0,1.4) {greedy: hết ý tưởng};
+        \draw[PaperGreen, thick] (0.1,0.6) -- (1.0,1.2) -- (2.0,1.6) -- (3.4,2.05);
+        \node[PaperGreen, right] at (2.6,1.2) {Pareto};
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{2.3.2\quad Đột biến bằng phản chiếu (Reflective Prompt Mutation)}{Sửa lỗi \emph{có chủ đích} thay vì sửa ngẫu nhiên}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.55\textwidth}
+      \begin{enumerate}\tightlist\footnotesize
+        \item \textbf{Chọn module} $\pi_i$ trong ứng viên $\Phi$ (round-robin);
+        \item \textbf{Chạy thử} $\Phi$ trên minibatch $\mathcal{M}$ $\rightarrow$ thu
+              \emph{execution traces} và phản hồi lỗi $f$ qua hàm $\mu_f$;
+        \item \textbf{Phản chiếu}: đưa ($\pi_i$ cũ $+$ traces $+$ feedback $f$) vào
+              một \emph{Reflection LM} $\rightarrow$ chẩn đoán nguyên nhân, viết lại
+              $\pi_i'$ cô đọng và có quy tắc rõ ràng;
+        \item \textbf{Lọc nhanh (minibatch gating)}: chạy $\Phi'$ trên chính $\mathcal{M}$:
+              \begin{itemize}\tightlist
+                \item điểm \textbf{không} tăng $\rightarrow$ loại ngay, tiết kiệm budget;
+                \item điểm \textbf{tăng} $\rightarrow$ đánh giá trên $\mathcal{D}_{\text{pareto}}$, thêm vào $\mathcal{P}$.
+              \end{itemize}
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \centering
+      \begin{tikzpicture}[font=\scriptsize, node distance=0.4cm,
+          b/.style={draw=Navy, fill=Panel, rounded corners=2pt, text width=3.5cm, align=center, inner sep=3pt}]
+        \node[b] (s)  {1. Chọn $\pi_i$ từ $\Phi\sim\mathcal{P}$};
+        \node[b, below=of s] (r) {2. Chạy trên minibatch $\mathcal{M}$};
+        \node[b, below=of r] (f) {3. Reflection LM đọc (traces, điểm, lỗi)};
+        \node[b, fill=AmberSoft, draw=Amber!80!black, below=of f] (e) {4. Sinh $\pi_i'$ $\rightarrow$ $\Phi'$};
+        \node[b, below=of e] (g) {5. Điểm trên $\mathcal{M}$ tăng?};
+        \draw[-{Stealth}] (s)--(r); \draw[-{Stealth}] (r)--(f); \draw[-{Stealth}] (f)--(e); \draw[-{Stealth}] (e)--(g);
+        \node[b, draw=PaperGreen, below=of g, xshift=-1.9cm, text width=1.5cm] (y) {có: giữ};
+        \node[b, draw=Red!60!black, below=of g, xshift=1.9cm, text width=1.5cm] (n) {không: bỏ};
+        \draw[-{Stealth}, PaperGreen] (g.south) -- ++(-1.9,-0.2) -- (y);
+        \draw[-{Stealth}, Red!60!black] (g.south) -- ++(1.9,-0.2) -- (n);
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+  \Takeaway{Vì sao tiết kiệm: mỗi ứng viên chỉ tốn $b$ lượt chạy để thử, không phải cả tập $\mathcal{D}_{\text{pareto}}$.}
+\end{frame}
+
+\begin{frame}{2.3.3\quad System-aware Merge}{Ghép hai ứng viên mà không phá bài học của nhau}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}\tightlist\footnotesize
+        \item GEPA lấy hai ứng viên $i,j$ \emph{không} có quan hệ tổ tiên;
+        \item Với mỗi module $m$, nếu $i$ đã sửa $m$ còn $j$ thì chưa (hoặc ngược lại),
+              thì lấy phiên bản \emph{đã sửa} $\Rightarrow$ không mất tiến bộ đã đạt;
+        \item Nếu cả hai \emph{đều} sửa $m$: chọn bản của ứng viên có điểm cao hơn
+              (hoà thì chọn ngẫu nhiên);
+        \item Điều kiện \texttt{DESIRABLE} loại các cặp không bổ sung gì cho nhau.
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \FigureFull[0.5]{gepa/fig9_merge}{Fig 9: chi tiết System-aware Merge, $\mathbf{r}$ là sampler có seed.}
+    \end{column}
+  \end{columns}
+  \Takeaway{Respect lineage: khác với crossover ngẫu nhiên, merge đảm bảo mỗi prompt con đều \emph{tương thích} với phần còn lại của hệ thống.}
+\end{frame}
+
+% ------------------------------------------------------------------ 2.5
+\begin{frame}{2.5\quad Kết quả thực nghiệm}{Học nhanh hơn GRPO, giỏi hơn MIPROv2}
+  \FigureFull[0.46]{gepa/fig1_learning}{Fig 1: so sánh GEPA, MIPROv2 và GRPO (24{,}000 rollout) trên HotpotQA và IFBench, Qwen3 8B.}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.5\textwidth}
+      \footnotesize\justifying
+      Prompt optimizer tiến rất nhanh ở giai đoạn đầu; GRPO cần rất nhiều rollout
+      mới bắt đầu dịch chuyển.
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \footnotesize\justifying
+      GEPA vượt GRPO trung bình \textbf{6\%}, cao nhất \textbf{20\%} score,
+      với \textbf{ít hơn tới 35$\times$} rollout.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{2.5\quad Kết quả thực nghiệm}{Bảng tổng hợp trên Qwen3 8B}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.62\textwidth}
+      \noindent\centering
+      \resizebox{\linewidth}{!}{%
+      \scriptsize
+      \begin{tabular}{@{}l cccccc r r@{}}
+        \toprule
+        Qwen3 8B & HotpotQA & IFBench & Hover & PUPA & AIME-25 & LiveBench & TB & Rollout \\
+        \midrule
+        Baseline   & 42.33 & 36.90 & 35.33 & 80.82 & 27.33 & 48.70 & 45.23 & --- \\
+        GRPO       & 43.33 & 35.88 & 38.67 & 86.66 & \Win{38.00} & 51.26 & 48.91 & 24{,}000 \\
+        MIPROv2    & 55.33 & 36.22 & 47.33 & 81.55 & 20.00 & 46.60 & 47.84 & --- \\
+        \textbf{GEPA} & \Win{62.33} & \Win{38.61} & \Win{52.33} & \Win{91.85} & 32.00 & 51.95 & \Win{54.85} & 3{,}936 \\
+        GEPA+Merge & 64.33 & 28.23 & 51.67 & 86.26 & 32.00 & 51.95 & 52.40 & --- \\
+        \bottomrule
+      \end{tabular}}\\[0.4em]
+      {\scriptsize\color{Muted}Bảng 1 (rút gọn), chỉ số cuối là ngân sách rollout trung bình mỗi task của GEPA/GRPO.}
+    \end{column}
+    \begin{column}{0.34\textwidth}
+      \begin{itemize}\tightlist\footnotesize
+        \item GEPA thắng ở 4/6 benchmark;
+        \item AIME-2025 là ngoại lệ: GRPO vẫn tốt hơn;
+        \item GEPA+Merge không luôn tốt hơn GEPA thuần.
+      \end{itemize}
+      \vspace{0.3em}
+      \begin{beamercolorbox}[wd=\linewidth,sep=0.5em]{block body}
+        \scriptsize
+        Trên GPT-4.1 Mini, GEPA đạt \textbf{+12.19} điểm tổng hợp (65.22) so với
+        baseline 53.03.
+      \end{beamercolorbox}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{2.6\quad Giới hạn \& Tổng kết}{}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \begin{beamercolorbox}[wd=\linewidth,sep=0.55em]{block title}
+        \centering Điểm mạnh
+      \end{beamercolorbox}
+      \vspace{0.3em}
+      \begin{itemize}\tightlist\footnotesize
+        \item Tận dụng \emph{text feedback} $\rightarrow$ biết sửa cái gì;
+        \item Rất tiết kiệm rollout so với RL;
+        \item Prompt học được \emph{chuyển giao} giữa các mô hình (GEPA tối ưu
+              trên Qwen3 8B vẫn đạt +9 điểm khi đánh giá trên GPT-4.1 Mini).
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{beamercolorbox}[wd=\linewidth,sep=0.55em]{block title}
+        \centering Giới hạn
+      \end{beamercolorbox}
+      \vspace{0.3em}
+      \begin{itemize}\tightlist\footnotesize
+        \item Mọi thứ vẫn nằm trong \textbf{không gian văn bản}: có thể \emph{đọc}
+              được, nhưng trình đọc prompt cũng có hạn;
+        \item Kết quả phụ thuộc mạnh Reflection LM;
+        \item Ngân sách $\sim$2{,}000--7{,}000 lượt chạy vẫn không nhỏ;
+        \item Không động vào trọng số $\Rightarrow$ có lỗi mà prompt không sửa được.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vspace{0.4em}
+  \Takeaway{GEPA trả lời câu hỏi "sửa prompt thế nào cho hiệu quả?" --- chương tiếp theo trả lời câu hỏi còn lại: "sinh LoRA có cần train không?".}
+\end{frame}

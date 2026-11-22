@@ -23,7 +23,7 @@
 \usepackage{tabularx}
 \usepackage{ragged2e}
 \usepackage{graphicx}
-\usepackage{xcolor}
+\usepackage[dvipsnames,table]{xcolor}
 \usepackage{adjustbox}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,shapes.geometric}
@@ -79,8 +79,8 @@
 \setbeamerfont{caption}{size=\scriptsize}
 \setbeamerfont{footline}{size=\scriptsize}
 
-\setbeamertemplate{itemize item}{\raise0.2ex\hbox{\scriptsize$\blacktriangleright$}}
-\setbeamertemplate{itemize subitem}{\raise0.2ex\hbox{\scriptsize$\bullet$}}
+\setbeamertemplate{itemize item}{\usebeamercolor[fg]{itemize item}\scriptsize\hbox to 1.25em{$\blacktriangleright$\hfil}}
+\setbeamertemplate{itemize subitem}{\usebeamercolor[fg]{itemize subitem}\scriptsize\hbox to 1.1em{$\bullet$\hfil}}
 \setbeamertemplate{enumerate item}{\color{Navy}\insertenumlabel.}
 
 % ---------------------------- Frame title with accent rule -------------

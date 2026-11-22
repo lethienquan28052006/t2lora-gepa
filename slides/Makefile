@@ -4,6 +4,8 @@
 #   make zip      -> overleaf.zip with only what Overleaf needs
 #   make clean    -> remove build artefacts
 
+# BasicTeX lives outside the default PATH; find it without touching the shell.
+export PATH := /Library/TeX/texbin:$(PATH)
 XELATEX ?= xelatex
 PYTHON  ?= ../.venv-slides/bin/python
 FLAGS   := -interaction=nonstopmode -halt-on-error
