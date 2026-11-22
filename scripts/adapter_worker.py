@@ -46,7 +46,7 @@ def load_generator(checkpoint: str, device: str = "cuda"):
         _args,
         hypermod,
         model,
-        tokenizer,
+        _tokenizer,
         emb_model,
         emb_tokenizer,
         task_desc_format_fn,

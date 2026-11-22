@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -30,7 +31,7 @@ from t2lgepa.schedule import Job, assert_one_job_per_gpu, plan_grid
 from t2lgepa.t2l import lora_module_name
 
 REFLECT_PORT = 8001
-GEPA_ARMS_SUPPORTED = ("gepa_3shot", "gepa_0shot")
+GEPA_ARMS_SUPPORTED = ("gepa_3shot", "gepa_0shot", "t2l_gepa_opt")
 
 def seed_instruction(task: str) -> str:
     """The GEPA starting instruction, in the task's own answer format."""
@@ -126,21 +127,30 @@ def run_job(
         raise RuntimeError(f"{job.arm} reached the GEPA branch")
     if reflect is None:
         raise RuntimeError(f"{job.arm} needs the reflection server")
-    few_shot_block = demo_block(demos) if job.arm == "gepa_3shot" else None
+    few_shot_block = demo_block(demos) if job.arm in ("gepa_3shot", "t2l_gepa_opt") else None
+    # `t2l_gepa_opt` optimises the prompt *on top of* the task's adapter: every rollout and
+    # the final scoring run on the LoRA, so reflection sees the adapted model's failures.
+    arm_model = (target_model(job.arm, job.task, cfg)
+                 if job.arm == "t2l_gepa_opt" else cfg.model_id)
     result = run_gepa(
         task=job.task, seed=job.seed, cfg=cfg, client=target, reflect_client=reflect,
         seed_prompt=seed_instruction(job.task), few_shot_block=few_shot_block,
-        train=splits.train, pareto=splits.pareto, out_dir=results_dir,
+        train=splits.train, pareto=splits.pareto, out_dir=results_dir, model=arm_model,
+        arm=job.arm,
     )
-    export_best_prompt(result, results_dir, task=job.task, seed=job.seed)
+    export_best_prompt(result, results_dir, task=job.task, seed=job.seed, arm=job.arm)
+    export_rendered_example(result, seed_instruction(job.task), few_shot_block, splits.train[0],
+                            results_dir, job.task, job.seed, job.arm)
 
     # Score the final prompt greedily on the held-out test set: the Pareto score above
     # is measured on the selection set the optimiser maximised, so it is not comparable
     # to the other arms.
+    lora_dir = Path(args_lora_root()) / job.task
     summary = run_arm(
         job.arm, job.task, job.seed, target,
-        prompt_fn_from(result.best_prompt, few_shot_block), cfg.model_id, cfg,
-        results_dir=results_dir, adapter_path=results_dir,
+        prompt_fn_from(result.best_prompt, few_shot_block), arm_model, cfg,
+        results_dir=results_dir,
+        adapter_path=lora_dir if arm_model != cfg.model_id else results_dir,
     )
     baseline = cfg.expected.get(f"{job.task}/base", 0.0)
     base_file = results_dir / f"base_{job.task}_s0.jsonl"
@@ -165,10 +175,37 @@ def run_job(
             "best_prompt": result.best_prompt}
 
 
+def resolve_config(args: argparse.Namespace) -> Config:
+    """Load the config and apply CLI redirects without touching decode settings."""
+    cfg = load_config(args.config)
+    if getattr(args, "results_dir", None):
+        cfg = replace(cfg, results_dir=args.results_dir)
+    return cfg
+
+
+def export_rendered_example(result, seed_prompt: str, few_shot_block: str | None, example,
+                            out_dir: Path, task: str, seed: int, arm: str) -> Path:
+    """The exact prompt text a demo must send, for the seed and for the winning candidate."""
+    sections = [
+        f"# arm={arm} task={task} seed={seed} example={example.id}",
+        "=== SEED PROMPT (rendered) ===",
+        prompt_fn_from(seed_prompt, few_shot_block)(example),
+        "=== BEST PROMPT (rendered) ===",
+        prompt_fn_from(result.best_prompt, few_shot_block)(example),
+    ]
+    path = Path(out_dir) / f"{arm}_{task}_s{seed}_rendered_example.txt"
+    path.write_text("\n".join(sections) + "\n", encoding="utf-8")
+    return path
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default="configs/base.yaml")
     parser.add_argument("--base-url", default="http://localhost:8010")
+    parser.add_argument("--results-dir", default=None,
+                        help="write results here instead of the config's results_dir (fresh runs)")
+    parser.add_argument("--target-api-key-env", default=None,
+                        help="env var holding the bearer key for the target endpoint")
     parser.add_argument("--extras", action="store_true")
     parser.add_argument("--no-gepa", action="store_true")
     parser.add_argument("--arms", default=None,
@@ -186,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
                         help="assume a reflection server is already running on port 8001")
     args = parser.parse_args(argv)
 
-    cfg = load_config(args.config)
+    cfg = resolve_config(args)
     gs = [int(s) for s in args.gepa_seeds.split(",")] if args.gepa_seeds else None
     ga = args.gepa_arms.split(",") if args.gepa_arms else None
     gt = args.gepa_tasks.split(",") if args.gepa_tasks else None
@@ -203,7 +240,9 @@ def main(argv: list[str] | None = None) -> int:
     results_dir = Path(cfg.results_dir)
     results_dir.mkdir(parents=True, exist_ok=True)
     adapters = [lora_module_name(t) for t in cfg.tasks]
-    target = VLLMClient(args.base_url, cfg.model_id, adapters=adapters)
+    target = VLLMClient(args.base_url, cfg.model_id, adapters=adapters,
+                        api_key=(os.environ.get(args.target_api_key_env)
+                                 if args.target_api_key_env else None))
     target.assert_ready()
     reflect_url = f"http://localhost:{REFLECT_PORT}"
 

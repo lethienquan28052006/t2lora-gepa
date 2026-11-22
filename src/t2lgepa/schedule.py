@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from t2lgepa.config import Config
 
 TARGET_ONLY_ARMS = ("base", "icl3", "t2l", "t2l_icl", "t2l_gepa")
-GEPA_ARMS = ("gepa_3shot", "gepa_0shot")
+GEPA_ARMS = ("gepa_3shot", "gepa_0shot", "t2l_gepa_opt")
 
 
 @dataclass(frozen=True)

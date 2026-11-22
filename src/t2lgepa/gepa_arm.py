@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -57,6 +57,23 @@ class GepaResult:
     wall_seconds: float
     accepted_candidates: int
     partial: bool = False
+    candidates: list[dict] = field(default_factory=list)
+
+
+def export_seed_prompt(text: str, out_dir: str | Path, task: str, seed: int, arm: str) -> Path:
+    """The instruction the search started from, named after the arm that ran it."""
+    path = Path(out_dir) / f"{arm}_{task}_s{seed}_seed_prompt.txt"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text + "\n", encoding="utf-8")
+    return path
+
+
+def export_candidates(result: GepaResult, out_dir: str | Path, task: str, seed: int,
+                      arm: str) -> Path:
+    path = Path(out_dir) / f"{arm}_{task}_s{seed}_candidates.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(result.candidates, indent=2) + "\n", encoding="utf-8")
+    return path
 
 
 def _compose(instruction: str, example: Example, few_shot_block: str | None) -> str:
@@ -156,6 +173,8 @@ def run_gepa(
     pareto: list[Example],
     optimizer: Callable[..., Any] | None = None,
     out_dir: str | Path | None = None,
+    model: str | None = None,
+    arm: str = "gepa_3shot",
 ) -> GepaResult:
     for example in [*train, *pareto]:
         if example.split == "test":
@@ -163,10 +182,11 @@ def run_gepa(
 
     out = Path(out_dir) if out_dir is not None else Path(cfg.results_dir)
     out.mkdir(parents=True, exist_ok=True)
-    curve_path = out / f"gepa_{task}_s{seed}.curve.jsonl"
+    curve_path = out / f"{arm}_{task}_s{seed}.curve.jsonl"
+    export_seed_prompt(seed_prompt, out, task, seed, arm)
 
     metric = MeteredMetric(score, cfg.gepa_budget)
-    adapter = _Adapter(client, cfg.model_id, metric, cfg, few_shot_block)
+    adapter = _Adapter(client, model or cfg.model_id, metric, cfg, few_shot_block)
     reflection_calls: list[int] = []
 
     if optimizer is None:
@@ -206,16 +226,27 @@ def run_gepa(
     if not pareto_score and scores:
         pareto_score = float(scores[int(max(range(len(scores)), key=lambda i: scores[i]))])
 
-    return GepaResult(
+    raw_candidates = list(getattr(result, "candidates", []) or [])
+    candidates = [
+        {"index": index, "instruction": candidate.get("instruction", ""),
+         "val_aggregate_score": float(scores[index]) if index < len(scores) else None,
+         "is_seed": index == 0}
+        for index, candidate in enumerate(raw_candidates)
+    ]
+
+    gepa_result = GepaResult(
         best_prompt=best.get("instruction", seed_prompt),
         pareto_score=pareto_score,
         curve=curve,
         metric_calls=metric.calls,
         reflection_calls=len(reflection_calls),
         wall_seconds=wall,
-        accepted_candidates=max(0, len(getattr(result, "candidates", []) or []) - 1),
+        accepted_candidates=max(0, len(raw_candidates) - 1),
         partial=partial,
+        candidates=candidates,
     )
+    export_candidates(gepa_result, out, task, seed, arm)
+    return gepa_result
 
 
 def assert_gate(result: GepaResult, baseline: float) -> None:
@@ -230,15 +261,17 @@ def assert_gate(result: GepaResult, baseline: float) -> None:
         )
 
 
-def export_best_prompt(result: GepaResult, out_dir: str | Path, task: str, seed: int) -> Path:
-    path = Path(out_dir) / f"gepa_{task}_s{seed}_best_prompt.txt"
+def export_best_prompt(result: GepaResult, out_dir: str | Path, task: str, seed: int,
+                       arm: str = "gepa_3shot") -> Path:
+    path = Path(out_dir) / f"{arm}_{task}_s{seed}_best_prompt.txt"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(result.best_prompt + "\n", encoding="utf-8")
     return path
 
 
-def load_best_prompt(results_dir: str | Path, task: str, seed: int = 0) -> str | None:
-    path = Path(results_dir) / f"gepa_{task}_s{seed}_best_prompt.txt"
+def load_best_prompt(results_dir: str | Path, task: str, seed: int = 0,
+                     arm: str = "gepa_3shot") -> str | None:
+    path = Path(results_dir) / f"{arm}_{task}_s{seed}_best_prompt.txt"
     return path.read_text().strip() if path.exists() else None
 
 

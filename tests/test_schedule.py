@@ -176,3 +176,10 @@ def _cfg():
     from t2lgepa.config import load_config
 
     return load_config("configs/mistral.yaml")
+
+
+def test_t2l_gepa_opt_is_a_gepa_arm(cfg):
+    jobs = plan_grid(cfg)
+    opt = [j for j in jobs if j.arm == "t2l_gepa_opt"]
+    assert opt and opt[0].kind == "target"
+    assert not any(j.arm == "t2l_gepa_opt" for j in plan_grid(cfg, gepa=False))

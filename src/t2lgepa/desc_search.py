@@ -167,8 +167,6 @@ Rules:
 class DescriptionAdapter:
     """GEPA adapter whose candidate is a task description, not an instruction."""
 
-    propose_new_texts = None
-
     def __init__(
         self,
         client: VLLMClient,

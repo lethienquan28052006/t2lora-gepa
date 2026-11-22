@@ -128,7 +128,7 @@ def test_reflection_calls_are_counted(tmp_path):
         optimizer=stub_optimizer, out_dir=tmp_path,
     )
     assert result.reflection_calls == 0  # the stub never reflects
-    assert (tmp_path / "gepa_gsm8k_s0.curve.jsonl").exists()
+    assert (tmp_path / "gepa_3shot_gsm8k_s0.curve.jsonl").exists()
 
 
 def test_adapter_refuses_test_examples(tmp_path):
@@ -164,7 +164,7 @@ def test_budget_trip_returns_partial_result_and_records_curve(tmp_path):
     assert result.partial is True
     assert result.metric_calls <= cfg.gepa_budget
     assert result.accepted_candidates == 0
-    assert (tmp_path / "gepa_gsm8k_s0.curve.jsonl").exists()
+    assert (tmp_path / "gepa_3shot_gsm8k_s0.curve.jsonl").exists()
 
 
 def test_accepted_candidates_excludes_the_seed(tmp_path):
@@ -185,7 +185,7 @@ def test_export_best_prompt_writes_the_file_the_demo_reads(tmp_path):
         reflection_calls=2, wall_seconds=1.0, accepted_candidates=3,
     )
     path = export_best_prompt(result, tmp_path, task="gsm8k", seed=0)
-    assert path.name == "gepa_gsm8k_s0_best_prompt.txt"
+    assert path.name == "gepa_3shot_gsm8k_s0_best_prompt.txt"
     assert "Best instruction here." in path.read_text()
 
 
@@ -255,6 +255,44 @@ def test_compose_renders_the_boolq_passage():
 def test_load_best_prompt_reads_the_saved_file(tmp_path):
     from t2lgepa.gepa_arm import load_best_prompt
 
-    (tmp_path / "gepa_gsm8k_s0_best_prompt.txt").write_text("  EVOLVED RULES  \n")
+    (tmp_path / "gepa_3shot_gsm8k_s0_best_prompt.txt").write_text("  EVOLVED RULES  \n")
     assert load_best_prompt(tmp_path, "gsm8k") == "EVOLVED RULES"
     assert load_best_prompt(tmp_path, "boolq") is None
+
+
+def _fake_optimizer(seen, key):
+    from types import SimpleNamespace
+
+    def optimize(**kwargs):
+        seen[key] = kwargs["adapter"].model
+        return SimpleNamespace(best_candidate={"instruction": "p"},
+                               best_val_aggregate_score=0.5,
+                               discovery_eval_counts=[0], val_aggregate_scores=[0.5])
+    return optimize
+
+
+def test_run_gepa_runs_rollouts_on_the_given_model(cfg, tmp_path):
+    from t2lgepa.data import Example
+    from t2lgepa.gepa_arm import run_gepa
+
+    ex = Example(id="gsm8k:train:0", task="gsm8k", question="2+2?", answers=[],
+                 answer="4", rationale=None, split="train")
+    seen = {}
+    run_gepa(task="gsm8k", seed=0, cfg=cfg, client=None, reflect_client=None,
+             seed_prompt="s", few_shot_block=None, train=[ex], pareto=[ex],
+             optimizer=_fake_optimizer(seen, "m"), out_dir=tmp_path,
+             model="t2l_gsm8k")
+    assert seen["m"] == "t2l_gsm8k"
+
+
+def test_run_gepa_defaults_to_the_base_model(cfg, tmp_path):
+    from t2lgepa.data import Example
+    from t2lgepa.gepa_arm import run_gepa
+
+    ex = Example(id="gsm8k:train:0", task="gsm8k", question="2+2?", answers=[],
+                 answer="4", rationale=None, split="train")
+    seen = {}
+    run_gepa(task="gsm8k", seed=0, cfg=cfg, client=None, reflect_client=None,
+             seed_prompt="s", few_shot_block=None, train=[ex], pareto=[ex],
+             optimizer=_fake_optimizer(seen, "m"), out_dir=tmp_path)
+    assert seen["m"] == cfg.model_id

@@ -37,7 +37,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--root", default="/data/quan.lt/temp/t2l-mistral")
     parser.add_argument(
         "--model",
-        default="/mnt/home/quan.lt/dev/t2lora-gepa/models/mistral-7b-instruct-v0.2",
+        default=str(Path(__file__).resolve().parents[1]
+                    / "models/mistral-7b-instruct-v0.2"),
     )
     parser.add_argument("--gpu-util", type=float, default=0.35)
     parser.add_argument("--max-model-len", type=int, default=4096)
