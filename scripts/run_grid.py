@@ -30,7 +30,7 @@ from t2lgepa.schedule import Job, assert_one_job_per_gpu, plan_grid
 from t2lgepa.t2l import lora_module_name
 
 REFLECT_PORT = 8001
-GEPA_ARMS_SUPPORTED = ("gepa_3shot", "gepa_0shot")
+GEPA_ARMS_SUPPORTED = ("gepa_3shot", "gepa_0shot", "t2l_gepa_opt")
 
 def seed_instruction(task: str) -> str:
     """The GEPA starting instruction, in the task's own answer format."""
@@ -126,21 +126,27 @@ def run_job(
         raise RuntimeError(f"{job.arm} reached the GEPA branch")
     if reflect is None:
         raise RuntimeError(f"{job.arm} needs the reflection server")
-    few_shot_block = demo_block(demos) if job.arm == "gepa_3shot" else None
+    few_shot_block = demo_block(demos) if job.arm in ("gepa_3shot", "t2l_gepa_opt") else None
+    # `t2l_gepa_opt` optimises the prompt *on top of* the task's adapter: every rollout and
+    # the final scoring run on the LoRA, so reflection sees the adapted model's failures.
+    arm_model = (target_model(job.arm, job.task, cfg)
+                 if job.arm == "t2l_gepa_opt" else cfg.model_id)
     result = run_gepa(
         task=job.task, seed=job.seed, cfg=cfg, client=target, reflect_client=reflect,
         seed_prompt=seed_instruction(job.task), few_shot_block=few_shot_block,
-        train=splits.train, pareto=splits.pareto, out_dir=results_dir,
+        train=splits.train, pareto=splits.pareto, out_dir=results_dir, model=arm_model,
     )
     export_best_prompt(result, results_dir, task=job.task, seed=job.seed)
 
     # Score the final prompt greedily on the held-out test set: the Pareto score above
     # is measured on the selection set the optimiser maximised, so it is not comparable
     # to the other arms.
+    lora_dir = Path(args_lora_root()) / job.task
     summary = run_arm(
         job.arm, job.task, job.seed, target,
-        prompt_fn_from(result.best_prompt, few_shot_block), cfg.model_id, cfg,
-        results_dir=results_dir, adapter_path=results_dir,
+        prompt_fn_from(result.best_prompt, few_shot_block), arm_model, cfg,
+        results_dir=results_dir,
+        adapter_path=lora_dir if arm_model != cfg.model_id else results_dir,
     )
     baseline = cfg.expected.get(f"{job.task}/base", 0.0)
     base_file = results_dir / f"base_{job.task}_s0.jsonl"

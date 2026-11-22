@@ -156,6 +156,7 @@ def run_gepa(
     pareto: list[Example],
     optimizer: Callable[..., Any] | None = None,
     out_dir: str | Path | None = None,
+    model: str | None = None,
 ) -> GepaResult:
     for example in [*train, *pareto]:
         if example.split == "test":
@@ -166,7 +167,7 @@ def run_gepa(
     curve_path = out / f"gepa_{task}_s{seed}.curve.jsonl"
 
     metric = MeteredMetric(score, cfg.gepa_budget)
-    adapter = _Adapter(client, cfg.model_id, metric, cfg, few_shot_block)
+    adapter = _Adapter(client, model or cfg.model_id, metric, cfg, few_shot_block)
     reflection_calls: list[int] = []
 
     if optimizer is None:

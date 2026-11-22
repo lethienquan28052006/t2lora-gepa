@@ -258,3 +258,41 @@ def test_load_best_prompt_reads_the_saved_file(tmp_path):
     (tmp_path / "gepa_gsm8k_s0_best_prompt.txt").write_text("  EVOLVED RULES  \n")
     assert load_best_prompt(tmp_path, "gsm8k") == "EVOLVED RULES"
     assert load_best_prompt(tmp_path, "boolq") is None
+
+
+def _fake_optimizer(seen, key):
+    from types import SimpleNamespace
+
+    def optimize(**kwargs):
+        seen[key] = kwargs["adapter"].model
+        return SimpleNamespace(best_candidate={"instruction": "p"},
+                               best_val_aggregate_score=0.5,
+                               discovery_eval_counts=[0], val_aggregate_scores=[0.5])
+    return optimize
+
+
+def test_run_gepa_runs_rollouts_on_the_given_model(cfg, tmp_path):
+    from t2lgepa.data import Example
+    from t2lgepa.gepa_arm import run_gepa
+
+    ex = Example(id="gsm8k:train:0", task="gsm8k", question="2+2?", answers=[],
+                 answer="4", rationale=None, split="train")
+    seen = {}
+    run_gepa(task="gsm8k", seed=0, cfg=cfg, client=None, reflect_client=None,
+             seed_prompt="s", few_shot_block=None, train=[ex], pareto=[ex],
+             optimizer=_fake_optimizer(seen, "m"), out_dir=tmp_path,
+             model="t2l_gsm8k")
+    assert seen["m"] == "t2l_gsm8k"
+
+
+def test_run_gepa_defaults_to_the_base_model(cfg, tmp_path):
+    from t2lgepa.data import Example
+    from t2lgepa.gepa_arm import run_gepa
+
+    ex = Example(id="gsm8k:train:0", task="gsm8k", question="2+2?", answers=[],
+                 answer="4", rationale=None, split="train")
+    seen = {}
+    run_gepa(task="gsm8k", seed=0, cfg=cfg, client=None, reflect_client=None,
+             seed_prompt="s", few_shot_block=None, train=[ex], pareto=[ex],
+             optimizer=_fake_optimizer(seen, "m"), out_dir=tmp_path)
+    assert seen["m"] == cfg.model_id
