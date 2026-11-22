@@ -3,6 +3,11 @@
 Date: 2026-11-22 · Branch: `feat/t2l-then-gepa`
 Scope: how the combined method is built, run and scored, with the exact artifacts and settings.
 
+> **Canonical results:** [`mistral-api-v1/report.md`](mistral-api-v1/report.md) (run
+> `mistral-7b-v1`). Sections 8–9 below are the first execution (run A); the second execution of
+> the same method found smaller, non-significant gains, and its seed/best prompts, candidate
+> histories, adapters and per-item outputs are packaged in the `mistral-7b-v1` artifact bundle.
+
 ---
 
 ## 1. What is being tested
@@ -27,7 +32,7 @@ Only the instruction text moves during the search.
 | | |
 |---|---|
 | Base model | `mistralai/Mistral-7B-Instruct-v0.2` (7.2B, fp16, ~14.5 GB) |
-| Serving | vLLM 0.31.0, one process, GPU 7 (A100-80GB) |
+| Serving | vLLM 0.31.0, one process behind an OpenAI-compatible endpoint |
 | Adapters | base model + 5 LoRA modules on the same server |
 | `max_model_len` | 4,096 |
 | Prompt format | vLLM applies the tokenizer's chat template (`[INST] … [/INST]`) |
@@ -235,7 +240,7 @@ All arms share:
 |---|---|
 | metric call | one model evaluation during the search |
 | reflection call | one request to the reflection LM |
-| wall time | GPU time for the whole task, search + final test pass |
+| wall time | endpoint wall time for the whole task, search + final test pass |
 | generated tokens | tokens emitted by the model |
 
 Observed, per task:
@@ -278,7 +283,7 @@ Mean +1.1 pp.
 # adapter (once per task, frozen afterwards)
 uv run python scripts/gen_mistral_loras.py --config configs/mistral.yaml --tasks winogrande
 
-# server: base + 5 adapters on GPU 7
+# server: base + 5 adapters on the target device
 uv run python scripts/write_demo_config.py --gpu-util 0.90 --max-loras 8 --out serve_config.yaml
 CUDA_VISIBLE_DEVICES=7 .venv-serve/bin/vllm serve \
   --config /data/quan.lt/temp/t2l-mistral/serve_config.yaml

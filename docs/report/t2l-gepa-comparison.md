@@ -1,6 +1,12 @@
 # T2L, GEPA, and T2L+GEPA on Mistral-7B: methods and results
 
-Date: 2026-11-20
+Date: 2026-11-20 (run A)
+
+> **Updated 2026-11-22.** A second, independent execution of the same protocol is now the
+> canonical four-method run: [`mistral-api-v1/report.md`](mistral-api-v1/report.md). Its search
+> outcomes differ — the combination's edge over T2L is +0.1 pp there against +1.1 pp here, and
+> GEPA returned its seed instruction on most tasks. Read this document as run A of two; the
+> variance table in the new report is the summary to quote.
 Model: `mistralai/Mistral-7B-Instruct-v0.2`
 Artifacts: `/data/quan.lt/temp/t2l-mistral/` · code: branch `feat/t2l-gepa-combo`
 
@@ -38,7 +44,7 @@ Three findings dominate:
 | | |
 |---|---|
 | Base model | `mistralai/Mistral-7B-Instruct-v0.2` (7.2B, fp16) |
-| Serving | one vLLM 0.31.0 process on GPU 7 (A100-80GB), base model + 5 LoRA modules |
+| Serving | one vLLM 0.31.0 process behind an OpenAI-compatible endpoint, base model + 5 LoRA modules |
 | LoRA slots | `max_loras` 8 for the main grid, 4 for the description search |
 | Prompt format | vLLM applies the tokenizer's chat template (`[INST] … [/INST]`) |
 | Decoding | greedy (T=0), `max_tokens` 512, for **every** reported number |
@@ -276,7 +282,7 @@ Against `t2l_icl`, paired bootstrap:
    headroom. The two tasks where `t2l_icl` was already at its ceiling (GSM8K, BoolQ) do not move.
 3. **The search is cheaper per rollout.** The adapter answers directly, so a rollout emits ~3×
    fewer tokens than on the base model. Both configurations spend the same budget (~1,250 metric
-   calls per task), but the adapted loop finished the five tasks in **21.5 min of GPU time**
+   calls per task), but the adapted loop finished the five tasks in **21.5 min of endpoint wall time**
    against **39.4 min** for the base-model loop — 1.8× faster, with the largest saving on
    HellaSwag (361 s → 147 s) and the smallest on GSM8K (984 s → 696 s, where the adapter still
    writes out its reasoning). Reflection calls were slightly higher, 69 vs 52.
