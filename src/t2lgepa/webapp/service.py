@@ -11,7 +11,7 @@ from t2lgepa.client import VLLMClient
 from t2lgepa.config import Config
 from t2lgepa.data import Example, Splits, make_splits
 from t2lgepa.scoring import extract_answer, score
-from t2lgepa.webapp.arms import ARMS, build_prompt, model_for
+from t2lgepa.webapp.arms import ARMS, SEARCHED_ARMS, build_prompt, model_for
 
 TASKS = ("gsm8k", "arc_challenge", "boolq", "hellaswag", "winogrande")
 
@@ -25,6 +25,7 @@ class _Run:
     latency_ms: int
     tokens: int
     prompt: str
+    model: str
 
 
 class DemoService:
@@ -42,9 +43,12 @@ class DemoService:
     def demos(self, task: str) -> list[Example]:
         return self._splits(task).train[:3]
 
-    def gepa_prompt(self, task: str) -> str | None:
-        path = self.results_dir / f"gepa_{task}_s0_best_prompt.txt"
-        return path.read_text().strip() if path.exists() else None
+    def gepa_prompt(self, task: str, arm: str = "gepa_3shot") -> str | None:
+        path = self.results_dir / f"{arm}_{task}_s0_best_prompt.txt"
+        if not path.exists():
+            return None
+        text = path.read_text()
+        return text.removesuffix("\n")
 
     def meta(self) -> dict:
         return {
@@ -101,13 +105,15 @@ class DemoService:
             raise ValueError(f"unknown task {task!r}")
         example, scored = self._example(task, question, options or [], passage, example_id)
         demos = self.demos(task)
-        gepa = self.gepa_prompt(task)
+        prompts = {arm: self.gepa_prompt(task, arm) for arm in SEARCHED_ARMS}
 
         runs: list[_Run] = []
+        skipped_arms: list[str] = []
         for arm in ARMS:
             try:
-                prompt = build_prompt(arm, example, demos, gepa)
+                prompt = build_prompt(arm, example, demos, prompts.get(arm))
             except ValueError:
+                skipped_arms.append(arm)
                 continue
             started = time.perf_counter()
             generation = self.client.generate(
@@ -125,6 +131,7 @@ class DemoService:
                     latency_ms=latency_ms,
                     tokens=generation.n_tokens,
                     prompt=prompt,
+                    model=model_for(arm, task, self.cfg),
                 )
             )
 
@@ -135,4 +142,5 @@ class DemoService:
             "passage": example.rationale if task == "boolq" else None,
             "gold": example.answer if scored else None,
             "arms": [run.__dict__ for run in runs],
+            "skipped_arms": skipped_arms,
         }

@@ -15,6 +15,7 @@ MODEL_PORT="${MODEL_PORT:-8010}"
 HOSTNAME_PUBLIC="${HOSTNAME_PUBLIC:-cs222.lethienquan.site}"
 TUNNEL_ID="${TUNNEL_ID:-68bc1088-ed4b-4c81-b495-0881666d937f}"
 LOGDIR="${LOGDIR:-/tmp/t2l-demo}"
+RUN_DIR="${RUN_DIR:-$ROOT/runs/mistral-7b-v1/results}"
 
 TUNNEL=0
 for arg in "$@"; do
@@ -73,9 +74,9 @@ if curl -sf "http://localhost:${WEB_PORT}/api/meta" >/dev/null 2>&1; then
   echo "[demo] reusing the web app already on :${WEB_PORT}"
 else
   echo "[demo] starting web app on :${WEB_PORT}"
-  ( cd "$REPO" && "$REPO/.venv/bin/python" -m t2lgepa.webapp.app \
+  ( cd "$REPO" && PYTHONPATH="$REPO/src${PYTHONPATH:+:$PYTHONPATH}" "$REPO/.venv/bin/python" -m t2lgepa.webapp.app \
       --config configs/mistral.yaml \
-      --results "$ROOT/results" \
+      --results "$RUN_DIR" \
       --base-url "http://localhost:${MODEL_PORT}" \
       --port "$WEB_PORT" > "$LOGDIR/web.log" 2>&1 ) &
   PIDS+=($!)

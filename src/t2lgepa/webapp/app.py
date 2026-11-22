@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from t2lgepa.client import GenerationError
 from t2lgepa.webapp.service import DemoService
 
 STATIC = Path(__file__).resolve().parent / "static"
@@ -25,6 +26,25 @@ class CompareRequest(BaseModel):
     example_id: str | None = None
 
 
+def canonical_note(results_dir: str | Path, tasks: list[str]) -> str:
+    """The canonical combination delta, calculated from the run the page is serving."""
+    from t2lgepa.runner import read_summary
+
+    means = {}
+    for arm in ("t2l_icl", "t2l_gepa_opt"):
+        scores = []
+        for task in tasks:
+            path = Path(results_dir) / f"{arm}_{task}_s0.jsonl"
+            summary = read_summary(path) if path.exists() else None
+            if summary is None:
+                return "Canonical evaluation is incomplete for this run."
+            scores.append(summary["score"])
+        means[arm] = sum(scores) / len(scores)
+    delta = (means["t2l_gepa_opt"] - means["t2l_icl"]) * 100
+    return (f"Canonical run: t2l_gepa_opt {delta:+.1f} pp over t2l_icl. "
+            "Previous independent search: +1.1 pp. Small GEPA deltas are search-dependent.")
+
+
 def create_app(service: DemoService, results_dir: str | Path | None = None) -> FastAPI:
     app = FastAPI(title="Mistral adaptation demo")
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
@@ -36,6 +56,16 @@ def create_app(service: DemoService, results_dir: str | Path | None = None) -> F
     @app.get("/api/meta")
     def meta() -> dict:
         return service.meta()
+
+    @app.get("/api/health")
+    def health() -> dict:
+        from t2lgepa.client import GenerationError
+
+        try:
+            service.client.assert_ready()
+        except GenerationError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        return {"ok": True}
 
     @app.get("/api/sample")
     def sample(task: str) -> dict:
@@ -53,6 +83,18 @@ def create_app(service: DemoService, results_dir: str | Path | None = None) -> F
             )
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except GenerationError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    @app.get("/api/prompt-library")
+    def prompt_library(task: str, arm: str) -> dict:
+        from t2lgepa.webapp.library import PromptLibrary
+
+        directory = Path(results_dir) if results_dir is not None else service.results_dir
+        try:
+            return PromptLibrary(directory).history(task, arm)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/api/results")
     def results() -> dict:
@@ -64,6 +106,7 @@ def create_app(service: DemoService, results_dir: str | Path | None = None) -> F
         return {
             "accuracy_md": accuracy_table(accuracy) if accuracy else "",
             "cost_md": cost_table(cost) if cost else "",
+            "caveat_md": canonical_note(directory, list(service.cfg.tasks)),
         }
 
     return app
@@ -87,7 +130,7 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default="configs/mistral.yaml")
-    parser.add_argument("--results", default="/data/quan.lt/temp/t2l-mistral/results")
+    parser.add_argument("--results", default="/data/quan.lt/temp/t2l-mistral/runs/mistral-7b-v1/results")
     parser.add_argument("--base-url", default="http://localhost:8010")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=7860)
