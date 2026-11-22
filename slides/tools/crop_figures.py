@@ -34,6 +34,11 @@ CROPS: dict[str, tuple[str, int, tuple[float, float, float, float]]] = {
     "t2l/fig2_arch.pdf":        (T2L,  3, (55, 66, 543, 182)),
     "t2l/fig3_error.pdf":       (T2L,  5, (330, 260, 545, 395)),
     "t2l/fig4_qualitative.pdf": (T2L,  8, (55, 66, 545, 392)),
+    # tables the source deck shows as screenshots (kept as printed by the paper)
+    "t2l/table1_recon.pdf":         (T2L, 5, (55, 103, 545, 250)),
+    "t2l/table2_zeroshot_a.pdf":    (T2L, 6, (55, 122, 545, 208)),
+    "t2l/table2_zeroshot_b.pdf":    (T2L, 6, (55, 208, 545, 314)),
+    "t2l/table3_scaling.pdf":       (T2L, 7, (118, 84, 480, 212)),
     # --- GEPA ---
     "gepa/fig1_learning.pdf":   (GEPA, 1, (95, 458, 500, 600)),
     "gepa/fig3_pipeline.pdf":   (GEPA, 5, (92, 95, 520, 334)),

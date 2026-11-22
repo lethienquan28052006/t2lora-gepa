@@ -15,16 +15,14 @@
 \usepackage[vietnamese]{babel}
 
 % ---------------------------- Math & symbols ---------------------------
-\usepackage{amsmath,amssymb,amsthm}
+\usepackage{amsmath,amssymb}
 
 % ---------------------------- Text & layout ----------------------------
 \usepackage{array}
 \usepackage{booktabs}
-\usepackage{tabularx}
 \usepackage{ragged2e}
 \usepackage{graphicx}
 \usepackage[dvipsnames,table]{xcolor}
-\usepackage{adjustbox}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,shapes.geometric}
 
@@ -85,45 +83,30 @@
 
 % ---------------------------- Frame title with accent rule -------------
 \setbeamertemplate{frametitle}{%
-  \vspace*{0.35em}%
-  \begin{beamercolorbox}[wd=\paperwidth,sep=0pt]{frametitle}%
-    %
-    {\usebeamercolor[fg]{frametitle}\usebeamerfont{frametitle}\insertframetitle}%
-    \ifx\insertframesubtitle\empty\else
-      \hspace{0.6em}{\color{Muted}\small\insertframesubtitle}%
-    \fi
-    \par\vspace{0.25em}%
-    {\color{Amber}\rule{\dimexpr\paperwidth-2\sidemargin\relax}{1.1pt}}%
-  \end{beamercolorbox}%
-  \vspace*{0.15em}%
+  \vspace*{0.30em}%
+  {\usebeamercolor[fg]{frametitle}\usebeamerfont{frametitle}\insertframetitle}%
+  \ifx\insertframesubtitle\empty\else
+    \hspace{0.55em}{\normalfont\small\color{Muted}\insertframesubtitle}%
+  \fi
+  \par\nobreak\vspace{0.18em}%
+  \noindent{\color{Amber}\rule{\textwidth}{1.1pt}}%
+  \par\vspace{0.10em}%
 }
 
 % ---------------------------- Footer -----------------------------------
 \setbeamertemplate{footline}{%
   \leavevmode%
   \hbox{%
-    \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.2ex,dp=1.1ex,left]{page number in head/foot}%
+    \begin{beamercolorbox}[wd=.325\paperwidth,ht=2.2ex,dp=1.1ex,left]{page number in head/foot}%
       \hspace*{\sidemargin}Nhóm 5 --- UIT%
     \end{beamercolorbox}%
-    \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.2ex,dp=1.1ex,center]{page number in head/foot}%
+    \begin{beamercolorbox}[wd=.345\paperwidth,ht=2.2ex,dp=1.1ex,center]{page number in head/foot}%
       CS222 --- Prompting \& PEFT%
     \end{beamercolorbox}%
-    \begin{beamercolorbox}[wd=.32\paperwidth,ht=2.2ex,dp=1.1ex,right]{page number in head/foot}%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.2ex,dp=1.1ex,right]{page number in head/foot}%
       \insertframenumber{}\,/\,\inserttotalframenumber\hspace*{\sidemargin}%
     \end{beamercolorbox}}%
   \vspace*{0.2ex}%
-}
-
-% ---------------------------- Section dividers -------------------------
-\AtBeginSection[]{%
-  \begin{frame}[plain]
-    \vfill
-    \centering
-    {\color{Muted}\small\insertsectionnumber}\\[0.4em]
-    {\color{Navy}\Large\bfseries\insertsectionhead}\\[0.6em]
-    {\color{Amber}\rule{5cm}{1.4pt}}
-    \vfill
-  \end{frame}
 }
 
 % ---------------------------- Helper commands --------------------------

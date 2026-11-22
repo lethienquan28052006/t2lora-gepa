@@ -1,1 +1,43 @@
-% placeholder - filled by a later task
+%=======================================================================
+%  Slide 55 - Chi phí và hạn chế
+%   Transcribed 1:1 from slide-cs222.pptx.pdf.
+%=======================================================================
+\section{Chi phí \& Hạn chế}
+
+\begin{frame}{Chi phí và hạn chế}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.6\textwidth}
+      \centering
+      \begin{columns}[T,onlytextwidth]
+        \begin{column}{0.46\textwidth}
+          \begin{beamercolorbox}[wd=\linewidth,sep=0.5em]{block title}
+            \centering\footnotesize T2L: sinh LoRA $+$ trả lời
+          \end{beamercolorbox}
+          \begin{center}
+            {\color{Navy}\Huge\bfseries 0,86}\\[0.15em]
+            {\footnotesize TFLOPs mỗi câu}
+          \end{center}
+        \end{column}
+        \begin{column}{0.46\textwidth}
+          \begin{beamercolorbox}[wd=\linewidth,sep=0.5em]{block title alerted}
+            \centering\footnotesize 3-shot ICL
+          \end{beamercolorbox}
+          \begin{center}
+            {\color{Amber!70!black}\Huge\bfseries 4,18}\\[0.15em]
+            {\footnotesize TFLOPs mỗi câu}
+          \end{center}
+        \end{column}
+      \end{columns}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.5em]{block title}
+        \centering\footnotesize Hạn chế
+      \end{beamercolorbox}
+      \begin{beamercolorbox}[wd=\dimexpr\linewidth-1em\relax,sep=0.6em]{block body}
+        \footnotesize
+        Phụ thuộc chất lượng mô tả (trong paper do GPT-4o-mini viết)\\[0.5em]
+        Chưa thử chuyển từ model nhỏ sang model lớn
+      \end{beamercolorbox}
+    \end{column}
+  \end{columns}
+\end{frame}
