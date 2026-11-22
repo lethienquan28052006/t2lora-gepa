@@ -137,8 +137,11 @@ Each of these invalidated an earlier run and now has a regression test.
 
 ## Demo
 
-A web playground compares the adaptation surfaces on one question, with gold-answer scoring when
-the item is drawn from the test split. See [`docs/demo.md`](docs/demo.md).
+**Live: [cs222.lethienquan.site](https://cs222.lethienquan.site).** AdaptLab has exactly two
+views: a **Live playground** that runs one question through all four methods and scores known test
+items, and **Prompt optimization**, which lets users inspect the real seed/candidate/best GEPA
+history for every task. Light desktop/mobile UI, exact-prompt dialogs and no simulated search.
+See [`docs/demo.md`](docs/demo.md).
 
 ```bash
 ./scripts/start_demo.sh --tunnel     # target endpoint + FastAPI page + cloudflared
