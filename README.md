@@ -88,9 +88,9 @@ searches the instruction with that adapter serving every rollout:
 
 Co-optimising beats transferring a base-model prompt (arm A, which *loses* 4–6 pp on two tasks),
 and the gains land exactly where the mechanism predicts: WinoGrande, where the zero-shot adapter
-ignored the answer format, and HellaSwag, where it had the most headroom. Cheap, too — the
-adapter writes 3× fewer tokens, so five tasks took ~30 minutes (1,236–1,380 metric calls,
-6–20 reflection calls each).
+ignored the answer format, and HellaSwag, where it had the most headroom. Cheaper per rollout
+too: the same ~1,250 metric calls per task, but 21.5 min of GPU time for all five tasks against
+39.4 min for the base-model loop, because the adapter writes ~3× fewer tokens.
 
 **Description search (the other direction, for completeness)** — GEPA searches the description, T2L turns each
 candidate into a new adapter (hypernetwork frozen), the adapter is loaded into the running

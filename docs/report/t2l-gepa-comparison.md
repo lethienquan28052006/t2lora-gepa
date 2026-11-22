@@ -274,9 +274,12 @@ Against `t2l_icl`, paired bootstrap:
 2. **The gain lands where the mechanism predicts.** WinoGrande is the task where the adapter
    ignored the answer format in zero-shot (27.9%); HellaSwag is where the adapter had the most
    headroom. The two tasks where `t2l_icl` was already at its ceiling (GSM8K, BoolQ) do not move.
-3. **The search is cheap here.** The adapter answers directly, so rollouts generate ~3× fewer
-   tokens than on the base model: 147 s wall for WinoGrande, 1,236–1,380 metric calls, 6–20
-   reflection calls. Five tasks finished in about 30 minutes.
+3. **The search is cheaper per rollout.** The adapter answers directly, so a rollout emits ~3×
+   fewer tokens than on the base model. Both configurations spend the same budget (~1,250 metric
+   calls per task), but the adapted loop finished the five tasks in **21.5 min of GPU time**
+   against **39.4 min** for the base-model loop — 1.8× faster, with the largest saving on
+   HellaSwag (361 s → 147 s) and the smallest on GSM8K (984 s → 696 s, where the adapter still
+   writes out its reasoning). Reflection calls were slightly higher, 69 vs 52.
 4. **It is a modest gain, not a new regime.** +1.1 pp mean, significant on one of five tasks.
    T2L does the heavy lifting; GEPA recovers a couple of points that the adapter's prompt-format
    mismatch was costing.
