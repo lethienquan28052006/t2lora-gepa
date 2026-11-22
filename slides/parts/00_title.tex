@@ -1,0 +1,57 @@
+% ---------------------------- Title page -------------------------------
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[Navy] (current page.north west) rectangle ([yshift=-0.62\paperheight]current page.north east);
+    \fill[Amber] ([yshift=-0.62\paperheight]current page.north west) rectangle ([yshift=-0.628\paperheight]current page.north east);
+    \node[anchor=north west, text=white!88, align=left, font=\scriptsize]
+      at ([xshift=0.7cm, yshift=-0.45cm]current page.north west) {%
+      ĐẠI HỌC QUỐC GIA TP. HỒ CHÍ MINH\\[0.1em]
+      TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN};
+    \node[anchor=west, text=white, align=left, font=\Large\bfseries, text width=13.4cm]
+      at ([xshift=0.7cm, yshift=0.6cm]current page.west) {%
+      Prompting \& PEFT\\[0.12em] Phần ứng dụng};
+    \node[anchor=south west, text=white!92, align=left, font=\footnotesize, text width=13.4cm]
+      at ([xshift=0.7cm, yshift=0.35cm]current page.south west) {%
+      \textbf{GEPA} --- Reflective Prompt Evolution \textit{(ICLR 2026)}\hfill
+      \textbf{Text-to-LoRA} --- Instant Transformer Adaptation \textit{(ICML 2025)}};
+  \end{tikzpicture}
+
+  \vspace{0.52\textheight}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.52\textwidth}
+      {\color{Muted}\scriptsize GVHD}\\[0.15em]
+      {\bfseries TS. Nguyễn Thị Quý}\\[0.7em]
+      {\color{Muted}\scriptsize Nhóm 5}\\[0.15em]
+      {\bfseries Bùi Huỳnh Tây}\\[0.1em]
+      {\bfseries Lê Thiên Quân}\\[0.1em]
+      {\bfseries Đoàn Hồng Bảo}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \raggedleft
+      {\color{Muted}\scriptsize Học phần}\\[0.15em]
+      {\bfseries Xử lý ngôn ngữ tự nhiên nâng cao (CS222)}\\[0.7em]
+      {\color{Muted}\scriptsize Nguồn hình \& số liệu}\\[0.15em]
+      {\scriptsize Sakana AI (T2L), Agrawal et al. (GEPA)}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---------------------------- Outline -----------------------------------
+\begin{frame}{Nội dung}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.52\textwidth}
+      \tableofcontents[hideallsubsections]
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \begin{beamercolorbox}[wd=\linewidth,sep=0.7em]{block body}
+        \footnotesize
+        \textbf{Một mô hình, hai bề mặt thích nghi}\\[0.5em]
+        Đầu ra của mô hình trên câu hỏi $x$ phụ thuộc vào hai thứ:
+        \[
+          y = \mathcal{M}(x;\ \underbrace{\pi}_{\text{prompt}},\ \underbrace{\theta_0+\Delta\theta}_{\text{trọng số}})
+        \]
+        Toàn bộ bài nói về hai cách cập nhật số hạng này.
+      \end{beamercolorbox}
+    \end{column}
+  \end{columns}
+\end{frame}
