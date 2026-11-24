@@ -7,3 +7,10 @@ build/
 *.toc
 *.vrb
 overleaf.zip
+overleaf_uit.zip
+latexmkrc
+*.DS_Store
+Prompting_PEFT*.zip
+
+# Local theme experiments
+demo_bg.*

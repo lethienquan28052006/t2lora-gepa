@@ -15,7 +15,7 @@
 % ------------------------------------------------------------------ 4
 \begin{frame}{1.1\quad Giới thiệu bài toán}
   \vspace{0.3em}
-  {\color{Amber!80!black}\textbf{Model}} là một mô hình ngôn ngữ đã qua ký hiệu là $\mathbf{M}$,
+  {\color{Amber!80!black}\textbf{Model}} là một mô hình ngôn ngữ ký hiệu là $\mathbf{M}$,
   sở hữu bộ trọng số gốc $\theta_0$.
 
   \vspace{0.6em}
@@ -65,12 +65,38 @@
   \end{itemize}
 \end{frame}
 
-% ------------------------------------------------------------------ 7
-\begin{frame}[c]{1.1\quad Giới thiệu bài toán: Downstream Task}
-  \centering
-  {\color{Navy}\Huge\bfseries Downstream Task}\\[0.5em]
-  {\color{Amber}\rule{5cm}{1.4pt}}
+% ------------------------------------------------------------------ 7a
+\begin{frame}{1.1\quad Giới thiệu bài toán}
+  \Sub{Ví dụ Input ($x$), Output ($m$) và Cách Eval ($\mu$)}
+  \vspace{0.5em}
+  \small
+  \renewcommand{\arraystretch}{1.55}
+  \begin{tabular}{@{}p{0.21\textwidth}@{\hspace{0.6em}}p{0.25\textwidth}@{\hspace{0.6em}}p{0.25\textwidth}@{\hspace{0.6em}}p{0.21\textwidth}@{}}
+    \hline
+    {\color{Navy}\textbf{Tác vụ}} &
+    {\color{Navy}\textbf{Input ($x$)}} &
+    {\color{Navy}\textbf{Đáp án ($m$)}} &
+    {\color{Navy}\textbf{Cách Eval ($\mu$)}}\\
+    \hline
+    \textbf{Giải Toán}\newline {\color{Muted}\scriptsize(GSM8K, MATH)} &
+    Đề bài toán bằng ngôn ngữ tự nhiên &
+    Lời giải từng bước $+$ Đáp số cuối cùng &
+    \textbf{Exact Match}\newline {\scriptsize(so khớp đáp số cuối)}\\
+    \hline
+    \textbf{Hỏi--đáp}\newline {\color{Muted}\scriptsize(HotpotQA)} &
+    Câu hỏi phức hợp $+$ Kho tài liệu ngữ cảnh &
+    Chuỗi suy luận tổng hợp $+$ Câu trả lời ngắn &
+    \textbf{Exact Match (EM)} / \textbf{F1-score} theo token\\
+    \hline
+    \textbf{Kiểm chứng thông tin}\newline {\color{Muted}\scriptsize(HoVer)} &
+    Phát biểu cần kiểm tra $+$ Bằng chứng &
+    Nhãn xác thực\newline (\texttt{Supported} / \texttt{Not}) &
+    \textbf{Accuracy} /\newline \textbf{Macro-F1}\\
+    \hline
+  \end{tabular}
 \end{frame}
+
+
 
 % ------------------------------------------------------------------ 8
 \begin{frame}{1.1\quad Giới thiệu bài toán}

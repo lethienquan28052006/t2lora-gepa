@@ -1,0 +1,351 @@
+%=======================================================================
+%  main_uit.tex - CS222 Prompting & PEFT, bản giao diện UIT
+%  Cùng nội dung với main.tex (dùng chung parts/01..05), khác phần giao diện:
+%   - nền giống slide gốc (vẽ lại bằng TikZ, vân lục giác lấy từ PDF gốc)
+%   - font Be Vietnam Pro (đóng gói trong fonts/), bảng màu xanh một tông
+%  Compile with XeLaTeX (twice):  xelatex main_uit.tex
+%=======================================================================
+\documentclass[aspectratio=169,11pt,t,xcolor={dvipsnames,table}]{beamer}
+
+\usepackage{fontspec}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath,amssymb}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{ragged2e}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,calc,shapes.geometric}
+\usepackage{hyperref}
+\usefonttheme{professionalfonts}
+
+\newcommand{\mathds}[1]{\ifmmode\mathbb{#1}\else$\mathbb{#1}$\fi}
+
+% ---------------------------- Fonts ------------------------------------
+\defaultfontfeatures{Ligatures=TeX}
+\setsansfont{BeVietnamPro}[
+  Path=fonts/, Extension=.ttf,
+  UprightFont=*-Regular, BoldFont=*-SemiBold,
+  ItalicFont=*-Italic,   BoldItalicFont=*-SemiBoldItalic]
+\newfontfamily\LightFont{BeVietnamPro-Light}[Path=fonts/, Extension=.ttf]
+\newfontfamily\MediumFont{BeVietnamPro-Medium}[Path=fonts/, Extension=.ttf]
+\newfontfamily\HeavyFont{BeVietnamPro-Bold}[Path=fonts/, Extension=.ttf]
+\newfontfamily\BlackFont{BeVietnamPro-ExtraBold}[Path=fonts/, Extension=.ttf]
+\newcommand{\Track}[1]{\addfontfeatures{LetterSpace=8}#1}
+
+% ---------------------------- Colours ----------------------------------
+% background (đo từ slide gốc)
+\definecolor{CornerBlue}{HTML}{2E5BD8}
+\definecolor{LineBlue}{HTML}{4FBDF2}
+\definecolor{StripeBlue}{HTML}{3466E0}
+\definecolor{TraceBlue}{HTML}{A9CDF4}
+\definecolor{DotBlue}{HTML}{B5DAF9}
+\definecolor{SectionBg}{HTML}{0C4C88}
+\definecolor{Cyan}{HTML}{3FE0F8}
+% typography
+\definecolor{Navy}{HTML}{12245A}
+\definecolor{Ink}{HTML}{263042}
+\definecolor{Muted}{HTML}{6B7689}
+\definecolor{Accent}{HTML}{2A5BE0}
+\definecolor{AccentSoft}{HTML}{EEF3FE}
+\definecolor{Rule}{HTML}{DCE3EE}
+\definecolor{FootGrey}{HTML}{9AA3B2}
+% names used by parts/*.tex (shared with main.tex), remapped to this palette
+\colorlet{NavySoft}{Accent}
+\colorlet{Amber}{Accent}
+\colorlet{AmberSoft}{AccentSoft}
+\definecolor{Panel}{HTML}{F2F5FB}
+\definecolor{PaperGreen}{HTML}{14855A}
+
+\setbeamercolor{normal text}{fg=Ink}
+\setbeamercolor{structure}{fg=Accent}
+\setbeamercolor{alerted text}{fg=Accent}
+\setbeamercolor{block title}{bg=Navy,fg=white}
+\setbeamercolor{block body}{bg=Panel,fg=Ink}
+\setbeamercolor{block title alerted}{bg=Accent,fg=white}
+\setbeamercolor{block body alerted}{bg=AccentSoft,fg=Ink}
+\setbeamercolor{itemize item}{fg=Accent}
+\setbeamercolor{caption name}{fg=Muted}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamersize{text margin left=1.05cm, text margin right=0.95cm}
+\newlength{\sidemargin}\setlength{\sidemargin}{1.05cm}
+\setbeamerfont{normal text}{size=\fontsize{10}{13.6}}
+\setbeamerfont{itemize/enumerate body}{size=\fontsize{10}{13.6}}
+\setbeamerfont{itemize/enumerate subbody}{size=\fontsize{9.4}{12.6}}
+\setbeamerfont{itemize/enumerate subsubbody}{size=\fontsize{9.4}{12.6}}
+\setbeamertemplate{itemize item}{\raisebox{0.2em}{\color{Accent}\rule{0.32em}{0.32em}}}
+\setbeamertemplate{itemize subitem}{\raisebox{0.22em}{\color{Muted}\rule{0.26em}{0.26em}}}
+\setbeamertemplate{itemize subsubitem}{\raisebox{0.22em}{\color{Muted}\rule{0.22em}{0.22em}}}
+\setbeamertemplate{enumerate item}{{\HeavyFont\color{Accent}\insertenumlabel.}}
+\setlength{\leftmargini}{1.2em}
+\setlength{\leftmarginii}{1.1em}
+\setlength{\parskip}{0.2em}
+% tighter space around display maths
+\makeatletter
+\g@addto@macro\normalsize{%
+  \setlength\abovedisplayskip{4pt}\setlength\belowdisplayskip{4pt}%
+  \setlength\abovedisplayshortskip{2pt}\setlength\belowdisplayshortskip{2pt}}
+\makeatother
+
+% parts/*.tex size pictures as a fraction of \textheight, tuned for main.tex.
+% This deck's header and font take more room, so every picture height given
+% relative to \textheight is scaled by \uitfig here (main.tex is unaffected).
+\newcommand{\uitfig}{0.76}
+\makeatletter
+\let\uit@includegraphics\includegraphics
+\renewcommand{\includegraphics}[2][]{%
+  \begingroup\textheight=\uitfig\textheight\uit@includegraphics[#1]{#2}\endgroup}
+\makeatother
+
+% ---------------------------- Background -------------------------------
+% A shape filled with the hexagon texture tinted by #1 (opacity #2).
+\newcommand{\HexFill}[3]{% #1 colour, #2 opacity, #3 path
+  \begin{scope}
+    \clip #3;
+    \node[anchor=south west, inner sep=0] at (0,0)
+      {\includegraphics[width=16cm,height=9cm]{figure/bg/hex}};
+    \fill[#1, opacity=#2] (0,0) rectangle (16,9);
+  \end{scope}}
+
+% Top-left and bottom-right corners: textured triangle + thin bent line.
+\newcommand{\Corners}[2]{% #1 triangle colour, #2 line colour
+  \HexFill{#1}{0.85}{(0,9) -- (0.95,9) -- (0,8.18) -- cycle}
+  \HexFill{#1}{0.85}{(16,0) -- (15.05,0) -- (16,0.82) -- cycle}
+  \draw[#2, line width=1.3pt, line join=miter]
+    (3.84,8.92) -- (1.04,8.92) -- (0.10,8.11) -- (0.10,6.88);
+  \draw[#2, line width=1.3pt, line join=miter]
+    (12.14,0.08) -- (14.96,0.08) -- (15.90,0.89) -- (15.90,2.11);}
+
+% Six gradient blocks on the left edge, white dot in the last one.
+\newcommand{\Stripes}[1]{% #1 colour
+  \foreach \i in {0,...,5} {
+    \pgfmathsetmacro{\top}{2.93-0.49*\i}
+    \shade[top color=#1!15!white, bottom color=#1, middle color=#1!75!white]
+      (0,\top-0.45) rectangle (0.58,\top);
+  }
+  \fill[white] (0.29,0.21) circle (0.17);}
+
+\newcommand{\Logo}{%
+  \node[anchor=north east, inner sep=0] at (15.85,8.83)
+    {\includegraphics[height=0.62cm]{figure/deck/uit_logo}};}
+
+\newcommand{\Footer}[2]{% #1 colour, #2 position node
+  \node[#2, text=#1, font=\LightFont\fontsize{5.5}{6}\selectfont]
+    {CS222 - Seminar - Prompting and PEFT - Group 5};}
+
+% One "circuit trace" on the agenda slide, mirrored on the right side.
+%   #1 = list of points (x,y) from the left edge, last point gets a dot.
+\newcommand{\Trace}[2]{%
+  \draw[TraceBlue, line width=1pt] #1;
+  \shade[inner color=DotBlue!60!white, outer color=DotBlue!90!blue, draw=TraceBlue!80!blue, line width=0.4pt] #2 circle (0.2);
+  \begin{scope}[xscale=-1, xshift=-16cm]
+    \draw[TraceBlue, line width=1pt] #1;
+    \shade[inner color=DotBlue!60!white, outer color=DotBlue!90!blue, draw=TraceBlue!80!blue, line width=0.4pt] #2 circle (0.2);
+  \end{scope}}
+
+% ---------------------------- Backgrounds ------------------------------
+\def\BgMode{content}
+
+\defbeamertemplate*{background}{deck}{%
+  \begin{tikzpicture}
+    \useasboundingbox (0,0) rectangle (16,9);
+    \csname bg@\BgMode\endcsname
+  \end{tikzpicture}}
+
+% Ordinary content slide (slide 4 onwards).
+\expandafter\def\csname bg@content\endcsname{%
+  \Corners{CornerBlue}{LineBlue}
+  \Stripes{StripeBlue}
+  \Logo
+  \node[anchor=south west, text=FootGrey, font=\LightFont\fontsize{5.5}{6}\selectfont]
+    at (0.85,0.12) {CS222 - Seminar - Prompting and PEFT - Group 5 \quad·\quad \insertframenumber\,/\,\inserttotalframenumber};}
+
+% Title slide (slide 1).
+\expandafter\def\csname bg@title\endcsname{%
+  % top-right band
+  \shade[left color=LineBlue!35, right color=LineBlue] (7.2,9) -- (16,9) -- (16,8.8) -- (7.4,8.8) -- cycle;
+  \HexFill{CornerBlue}{0.85}{(12.75,9) -- (16,9) -- (16,8.6) -- (13.15,8.6) -- cycle}
+  % bottom-left band
+  \HexFill{CornerBlue}{0.85}{(0,0) -- (8.86,0) -- (8.6,0.25) -- (3.3,0.25) -- (3.05,0.40) -- (0,0.40) -- cycle}
+  \fill[white] (0.25,0.20) circle (0.13);
+  % top-left line and bottom-right corner
+  \HexFill{CornerBlue}{0.85}{(0,9) -- (0.95,9) -- (0,8.18) -- cycle}
+  \draw[LineBlue, line width=1.3pt] (3.84,8.92) -- (1.04,8.92) -- (0.10,8.11) -- (0.10,6.88);
+  \HexFill{CornerBlue}{0.85}{(16,0) -- (15.05,0) -- (16,0.82) -- cycle}
+  \draw[LineBlue, line width=1.3pt] (12.14,0.08) -- (14.96,0.08) -- (15.90,0.89) -- (15.90,2.11);}
+
+% Agenda slide (slide 2): corners + circuit traces.
+\expandafter\def\csname bg@agenda\endcsname{%
+  \Corners{CornerBlue}{LineBlue}
+  \Logo
+  \Trace{(0,6.65) -- (1.09,7.34) -- (2.91,7.34)}{(3.11,7.34)}
+  \Trace{(0,6.07) -- (1.61,6.07)}{(1.81,6.07)}
+  \Trace{(0,4.95) -- (0.18,4.95)}{(0.38,4.95)}
+  \Trace{(0,3.31) -- (0.28,3.31)}{(0.48,3.31)}
+  \Trace{(0,2.41) -- (1.57,2.41)}{(1.77,2.41)}
+  \Trace{(0,1.84) -- (1.09,1.10) -- (2.91,1.10)}{(3.11,1.10)}
+  \fill[CornerBlue] (0.25,0.2) circle (0.14);
+  \Footer{FootGrey}{anchor=south, at={(8,0.22)}}}
+
+% Section divider (slide 3): blue hexagon background, cyan details.
+\expandafter\def\csname bg@section\endcsname{%
+  \node[anchor=south west, inner sep=0] at (0,0)
+    {\includegraphics[width=16cm,height=9cm]{figure/bg/hex}};
+  \shade[top color=SectionBg!85!black, bottom color=SectionBg, opacity=0.82] (0,0) rectangle (16,9);
+  \Corners{Cyan}{Cyan}
+  \Stripes{Cyan}
+  \Logo
+  \Footer{white!85}{anchor=south west, at={(1.21,0.2)}}}
+
+% ---------------------------- Frame title & footline -------------------
+% Eyebrow (section name) + title (+ subtitle) + short accent bar.
+\setbeamertemplate{frametitle}{%
+  \vspace*{0.05cm}%
+  {\MediumFont\fontsize{6}{7}\selectfont\color{Accent}%
+    \ifx\insertsectionhead\empty\mbox{}\else\Track{\MakeUppercase{\insertsectionhead}}\fi}\par\vspace{0.02cm}%
+  {\HeavyFont\fontsize{14.5}{17}\selectfont\color{Navy}\insertframetitle}%
+  \ifx\insertframesubtitle\empty\else
+    \hspace{0.4em}{\MediumFont\fontsize{10}{12}\selectfont\color{Accent}\insertframesubtitle}%
+  \fi
+  \par\nointerlineskip\vspace{0.14cm}%
+  \noindent{\color{Accent}\rule{0.9cm}{1.6pt}}{\color{Rule}\rule[0.2pt]{\dimexpr\linewidth-2.2cm\relax}{0.6pt}}%
+  \par\nointerlineskip\vspace{0.3cm}}
+\setbeamertemplate{footline}{}
+
+% ---------------------------- Helpers used by parts/*.tex --------------
+\newcommand{\tightlist}{\setlength{\itemsep}{0.3em}\setlength{\parskip}{0.1em}}
+
+\newcommand{\FigureFull}[3][0.62]{%
+  \begin{center}
+    \includegraphics[width=\linewidth,height=#1\textheight,keepaspectratio]{figure/#2}%
+    \par\vspace{0.25em}{\color{Muted}\scriptsize #3}%
+  \end{center}}
+
+\newcommand{\DeckFig}[3][0.7]{%
+  \includegraphics[width=#3,height=#1\textheight,keepaspectratio]{figure/deck/#2}}
+
+\newcommand{\Label}[1]{{\MediumFont\fontsize{7.5}{9}\selectfont\color{Muted}\Track{\MakeUppercase{#1}}}}
+\newcommand{\Sub}[1]{{\HeavyFont\color{Accent}#1}\par\vspace{0.2em}}
+
+% Conclusion line: soft card with an accent bar.
+\newcommand{\Takeaway}[1]{%
+  \par\vspace{0.6em}\noindent
+  \begin{tikzpicture}
+    \node[fill=AccentSoft, rounded corners=4pt, inner xsep=0.4cm, inner ysep=0.22cm,
+          text width=\linewidth-0.8cm, align=left, font=\MediumFont] (c) {#1};
+    \fill[Accent, rounded corners=1pt] (c.north west) rectangle ([xshift=3pt]c.south west);
+  \end{tikzpicture}}
+
+% A question to the room.
+\newcommand{\Ask}[1]{%
+  \par\vspace{0.3em}\noindent
+  \begin{tikzpicture}
+    \node[fill=AccentSoft, rounded corners=4pt, inner xsep=0.4cm, inner ysep=0.22cm,
+          text width=\linewidth-1.4cm, align=left, font=\MediumFont] (c) {#1};
+    \node[circle, fill=Accent, text=white, font=\HeavyFont\small, inner sep=0pt,
+          minimum size=0.5cm, anchor=east] at ([xshift=-0.15cm]c.west) {?};
+  \end{tikzpicture}}
+
+\newcommand{\TaskCard}[2]{%
+  \begin{minipage}[t]{0.32\linewidth}
+    \begin{beamercolorbox}[wd=\linewidth,sep=0.45em]{block body}
+      \footnotesize\raggedright\textbf{#1}\par\vspace{0.15em}{\scriptsize\color{Muted}#2}
+    \end{beamercolorbox}
+  \end{minipage}}
+\newcommand{\Best}[1]{\textbf{#1}}
+\newcommand{\Win}[1]{{\color{PaperGreen}\textbf{#1}}}
+\newcommand{\Dim}[1]{{\color{Muted}#1}}
+\newcommand{\cell}[1]{\ensuremath{#1}}
+
+% Section divider: \SectionSlide{N. Title}{tagline}{agenda}
+\makeatletter
+\def\uit@splitsec#1. #2\@nil{\def\uit@num{#1}\def\uit@title{#2}}
+\newcommand{\SectionSlide}[3]{%
+  \uit@splitsec#1\@nil
+  {\def\BgMode{section}\colorlet{Amber}{Cyan}%
+  \begin{frame}[plain]
+    \begin{tikzpicture}[remember picture, overlay, shift={(current page.south west)}]
+      \node[anchor=west, inner sep=0, align=left, text width=11.4cm] (blk) at (3.95,4.55) {%
+        {\MediumFont\fontsize{8}{9}\selectfont\color{Cyan}\Track{CHƯƠNG \uit@num}}\par\vspace{0.12cm}
+        {\HeavyFont\fontsize{22}{26}\selectfont\color{white}\uit@title}\par
+        \ifx\relax#2\relax\else\vspace{0.06cm}{\MediumFont\fontsize{12}{14}\selectfont\color{Cyan}#2}\par\fi
+        \vspace{0.25cm}{\color{Cyan}\rule{1.1cm}{2pt}}\par\vspace{0.3cm}
+        {\color{white}\MediumFont\fontsize{11.5}{14}\selectfont #3}};
+      \node[anchor=east, text=Cyan, font=\BlackFont\fontsize{56}{56}\selectfont]
+        at ([xshift=-0.45cm]blk.west) {0\uit@num};
+      \draw[white, opacity=0.25, line width=0.8pt]
+        ([xshift=-0.2cm]blk.north west) -- ([xshift=-0.2cm]blk.south west);
+    \end{tikzpicture}
+  \end{frame}}}
+\makeatother
+
+% ---------------------------- Metadata ---------------------------------
+\title{Prompting \& PEFT: Phần ứng dụng}
+\author{Nhóm 5}
+\date{CS222}
+
+\begin{document}
+
+%----------------------------------------------------------------------- 1
+{\def\BgMode{title}
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture, overlay, shift={(current page.south west)}]
+    \node[anchor=west, inner sep=0] (logo) at (0.55,8.37)
+      {\includegraphics[height=0.62cm]{figure/deck/uit_logo}};
+    \node[anchor=west, align=left, text=Navy, font=\MediumFont\fontsize{6.5}{8}\selectfont]
+      at ([xshift=0.15cm]logo.east)
+      {ĐẠI HỌC QUỐC GIA TP. HỒ CHÍ MINH\\{\HeavyFont TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN}};
+
+    \node[text=Accent, font=\MediumFont\fontsize{7.5}{9}\selectfont]
+      at (8,6.95) {\Track{CS222 \,·\, XỬ LÝ NGÔN NGỮ TỰ NHIÊN NÂNG CAO}};
+    \node[text=Navy, font=\BlackFont\fontsize{38}{42}\selectfont]
+      at (8,5.75) {Prompting \& PEFT};
+    \node[text=Accent, font=\MediumFont\fontsize{17}{20}\selectfont]
+      at (8,4.72) {Phần ứng dụng};
+    \shade[left color=Accent, right color=LineBlue] (7.1,4.12) rectangle (8.9,4.17);
+
+    % info row
+    \node[anchor=north east, align=right] at (5.45,3.35)
+      {\Label{Giảng viên}\\[0.35em]{\HeavyFont\fontsize{11}{13}\selectfont\color{Navy} TS. Nguyễn Thị Quý}};
+    \draw[Rule, line width=0.8pt] (5.9,3.4) -- (5.9,2.4);
+    \node[anchor=north west, align=left] at (6.35,3.35)
+      {\Label{Nhóm 5}\\[0.35em]{\MediumFont\fontsize{10.5}{13}\selectfont\color{Ink}
+        Bùi Huỳnh Tây \,·\, Lê Thiên Quân \,·\, Đoàn Hồng Bảo}};
+  \end{tikzpicture}
+\end{frame}}
+
+%----------------------------------------------------------------------- 2
+{\def\BgMode{agenda}
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture, overlay, shift={(current page.south west)}]
+    \node[text=Navy, font=\HeavyFont\fontsize{22}{26}\selectfont] at (8,7.72) {Nội dung};
+    \shade[left color=Accent, right color=LineBlue] (7.45,7.12) rectangle (8.55,7.17);
+    \foreach \t/\tag [count=\k] in {
+        Bài toán Downstream Task/,
+        Prompting: GEPA/ICLR 2026,
+        PEFT: Text-to-LoRA/ICML 2025,
+        Quy trình thực nghiệm \& kết hợp 2 phương pháp/} {
+      \pgfmathsetmacro{\y}{6.05-0.98*(\k-1)}
+      \fill[white, opacity=0.92, rounded corners=6pt] (2.9,\y-0.38) rectangle (13.1,\y+0.38);
+      \draw[Rule, rounded corners=6pt] (2.9,\y-0.38) rectangle (13.1,\y+0.38);
+      \fill[Accent] (3.4,\y) circle (0.24);
+      \node[text=white, font=\HeavyFont\fontsize{10}{10}\selectfont] at (3.4,\y) {\k};
+      \node[anchor=west, text=Ink, font=\MediumFont\fontsize{11}{14}\selectfont] at (3.9,\y) {\t};
+      \ifx\tag\empty\else
+        \node[anchor=east, fill=AccentSoft, text=Accent, rounded corners=6pt, inner xsep=0.22cm,
+              inner ysep=0.09cm, font=\MediumFont\fontsize{7.5}{9}\selectfont] at (12.85,\y) {\tag};
+      \fi
+    }
+  \end{tikzpicture}
+\end{frame}}
+
+
+\input{parts/01_dta}
+\input{parts/02_gepa}
+\input{parts/03_t2l}
+\input{parts/04_cost}
+\input{parts/05_experiments}
+\input{parts/06_references}
+
+\end{document}
