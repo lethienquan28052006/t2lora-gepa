@@ -31,12 +31,22 @@ The named Cloudflare tunnel routes the public hostname to port 7860.
 
 ### Prompt optimization
 
-- Select dataset and either `gepa_3shot` or `t2l_gepa_opt`.
-- Inspect the real seed instruction, stored candidate list, Pareto scores/curve, selected
-  instruction and best-on-`D_pareto`. Added lines are highlighted against the seed.
-- If best equals seed, the page says **No better prompt found** rather than drawing a fake diff.
-- A collapsible rendered example shows demos + instruction + one actual item.
-- Nothing is regenerated: this view only reads the stored GEPA artifacts.
+- Open directly on an examples-first gallery of the four genuinely changed prompt pairs:
+  `gepa_3shot`/ARC-C and `t2l_gepa_opt`/ARC-C, BoolQ and HellaSwag. Unchanged searches are not
+  presented as optimization stories.
+- Each story summarizes the reviewed instruction changes, shows the full seed and best prompts,
+  and offers three real held-out test cases where the matching starting-prompt baseline was wrong
+  and the optimized arm was right. `icl3` is paired only with `gepa_3shot`; `t2l_icl` is paired only
+  with `t2l_gepa_opt`, so weights, demos and inputs stay fixed and only the instruction changes.
+- These are **selected individual corrections**, not evidence of aggregate or statistically
+  significant improvement. The canonical accuracy/cost view remains the aggregate evidence.
+- Expand **Explore full candidate history** to select any dataset/arm, inspect the real seed,
+  stored candidates, Pareto scores/curve and best-on-`D_pareto`. Added lines are highlighted.
+- If best equals seed, the raw explorer says **No better prompt found** rather than drawing a fake
+  diff. A collapsible rendered example shows demos + instruction + one actual item.
+- `GET /api/prompt-examples` serves the gallery from a lazily populated, per-app read-only cache.
+  Missing or corrupt artifacts omit only the affected story and can leave an empty gallery without
+  breaking the raw explorer or live playground. No prompts or answers are regenerated.
 
 ## Run from another checkout
 
@@ -77,9 +87,10 @@ node tests/e2e/check_demo.mjs
 
 The browser check uses a fixed sample response only for `/api/sample`; the actual prompt builders,
 comparison service and scorer still run. It asserts four response cards, scored and unscored
-behavior, exact prompts, unchanged seed handling, candidate selection, compact scores, dashboard
-accuracy/cost totals, incomplete and failed result loading, no horizontal mobile overflow and no
-JavaScript page errors.
+behavior, exact prompts, all four optimization stories, three wrong-to-right cases per story,
+story/case selection, selected-case caveats, empty/malformed gallery handling, unchanged seed
+handling, candidate selection, compact scores, dashboard accuracy/cost totals, incomplete and
+failed result loading, keyboard operation, no horizontal mobile overflow and no JavaScript errors.
 
 ## Files
 
@@ -88,6 +99,7 @@ JavaScript page errors.
 | `src/t2lgepa/webapp/arms.py` | Four method prompt/model mappings |
 | `src/t2lgepa/webapp/service.py` | Sampling, generation and scoring |
 | `src/t2lgepa/webapp/library.py` | Read-only stored GEPA histories |
+| `src/t2lgepa/webapp/examples.py` | Matched prompt stories and wrong-to-right test cases |
 | `src/t2lgepa/webapp/app.py` | Routes and static mount |
 | `src/t2lgepa/webapp/static/` | Light two-view HTML/CSS/JS |
 | `tests/e2e/` | Deterministic inference and headless-browser checks |

@@ -1,6 +1,7 @@
 const state = {
   task: null, meta: null, item: null, view: "playground", searchArm: "gepa_3shot",
   library: null, selectedIndex: null, busy: false, runId: 0, libraryRunId: 0,
+  stories: null, storyId: null, caseId: null, examplesRunId: 0,
   evalRows: null, evalMetric: "accuracy",
 };
 
@@ -49,7 +50,10 @@ function switchView(view) {
   }
   $("playground-view").hidden = view !== "playground";
   $("prompt-view").hidden = view !== "prompt";
-  if (view === "prompt") loadLibrary();
+  if (view === "prompt") {
+    loadExamples();
+    loadLibrary();
+  }
 }
 
 function renderTasks() {
@@ -173,6 +177,130 @@ async function compare() {
     $("sample-btn").disabled = false;
     $("compare-btn").replaceChildren("Run all 4 ", el("span", {}, "→"));
   }
+}
+
+function validStory(story) {
+  const validOutput = (output, correct) => output && typeof output.text === "string"
+    && (typeof output.pred === "string" || output.pred === null) && output.correct === correct;
+  return story && typeof story.id === "string" && typeof story.task === "string"
+    && typeof story.arm === "string" && typeof story.baseline_arm === "string"
+    && typeof story.title === "string" && typeof story.seed === "string"
+    && typeof story.best === "string" && Array.isArray(story.changes)
+    && story.changes.every((change) => typeof change === "string")
+    && Array.isArray(story.cases) && story.cases.every((item) => item
+      && typeof item.id === "string" && typeof item.question === "string"
+      && typeof item.gold === "string" && Array.isArray(item.options)
+      && item.options.every((option) => typeof option === "string")
+      && (typeof item.passage === "string" || item.passage === null)
+      && validOutput(item.before, false) && validOutput(item.after, true));
+}
+
+async function loadExamples() {
+  const requestId = ++state.examplesRunId;
+  $("gallery-status").hidden = true;
+  $("gallery-empty").hidden = true;
+  try {
+    const data = await api("/api/prompt-examples");
+    if (state.view !== "prompt" || requestId !== state.examplesRunId) return;
+    if (!Array.isArray(data.stories)) throw new Error("Invalid gallery response");
+    state.stories = data.stories.filter(validStory);
+    if (data.stories.length && !state.stories.length) throw new Error("Invalid stored stories");
+    if (!state.stories.some((story) => story.id === state.storyId)) {
+      state.storyId = state.stories[0]?.id ?? null;
+      state.caseId = null;
+    }
+    if (!state.caseId && state.stories[0]) state.caseId = state.stories[0].cases[0]?.id ?? null;
+    renderExamples();
+    if (state.stories[0] && state.task !== state.stories[0].task) selectTask(state.stories[0].task);
+  } catch (_) {
+    if (requestId !== state.examplesRunId) return;
+    state.stories = [];
+    state.storyId = null;
+    $("story-list").replaceChildren();
+    $("story-detail").hidden = true;
+    $("gallery-empty").hidden = true;
+    $("gallery-status").textContent = "Stored optimization stories could not be displayed. The full candidate explorer is still available below.";
+    $("gallery-status").hidden = false;
+  }
+}
+
+function selectStory(storyId) {
+  const story = state.stories?.find((item) => item.id === storyId);
+  if (!story) return;
+  state.storyId = storyId;
+  state.caseId = story.cases[0]?.id ?? null;
+  renderExamples();
+  if (state.task !== story.task) selectTask(story.task);
+}
+
+function currentCase(story) {
+  return story.cases.find((item) => item.id === state.caseId) || story.cases[0] || null;
+}
+
+function renderExamples() {
+  const stories = state.stories || [];
+  const story = stories.find((item) => item.id === state.storyId) || stories[0];
+  $("gallery-empty").hidden = stories.length !== 0;
+  $("story-list").replaceChildren(...stories.map((item, index) => el("button", {
+    class: "story-card" + (item.id === story?.id ? " active" : ""),
+    onclick: () => selectStory(item.id), "data-story": item.id,
+    "aria-pressed": item.id === story?.id ? "true" : "false",
+  },
+    el("span", { class: "story-number" }, String(index + 1).padStart(2, "0")),
+    el("span", { class: "story-card-task" }, `${TASK_LABELS[item.task] || item.task} · ${item.arm === "gepa_3shot" ? "GEPA on base" : "T2L × GEPA"}`),
+    el("strong", {}, item.title),
+    el("span", { class: "story-card-count" }, `${item.cases.length} selected ${item.cases.length === 1 ? "correction" : "corrections"} →`))));
+  $("story-detail").hidden = !story;
+  if (!story) return;
+  state.storyId = story.id;
+  $("story-method").textContent = `${TASK_LABELS[story.task] || story.task} · ${story.baseline_arm} → ${story.arm}`;
+  $("story-title").textContent = story.title;
+  $("story-case-count").textContent = story.cases.length;
+  $("story-changes").replaceChildren(...story.changes.map((change) => el("li", {}, change)));
+  $("gallery-seed-prompt").textContent = story.seed;
+  renderHighlightedPrompt($("gallery-best-prompt"), story.seed, story.best);
+
+  const selectedCase = currentCase(story);
+  state.caseId = selectedCase?.id ?? null;
+  $("case-list").replaceChildren(...story.cases.map((item, index) => el("button", {
+    class: "case-card" + (item.id === selectedCase?.id ? " active" : ""),
+    onclick: () => { state.caseId = item.id; renderCase(story); renderCaseList(story); },
+    "data-case": item.id, "aria-pressed": item.id === selectedCase?.id ? "true" : "false",
+  }, el("b", {}, `Example ${index + 1}`), el("span", {}, item.id),
+    el("span", { class: "case-transition" }, "wrong → right"))));
+  renderCase(story);
+}
+
+function renderCaseList(story) {
+  for (const button of document.querySelectorAll("#case-list .case-card")) {
+    const active = button.dataset.case === state.caseId;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  }
+}
+
+function renderCase(story) {
+  const item = currentCase(story);
+  $("case-detail").hidden = !item;
+  if (!item) {
+    $("case-list").replaceChildren(el("p", { class: "notice" },
+      "No wrong-to-right test cases were stored for this changed prompt pair."));
+    return;
+  }
+  $("case-detail").dataset.case = item.id;
+  $("case-id").textContent = item.id;
+  $("case-gold").textContent = `gold: ${item.gold}`;
+  $("case-question").textContent = item.question;
+  $("case-options").replaceChildren(...(item.options || []).map((option, index) =>
+    el("div", {}, `(${String.fromCharCode(65 + index)}) ${option}`)));
+  $("case-passage-wrap").hidden = !item.passage;
+  $("case-passage").textContent = item.passage || "";
+  $("before-title").textContent = story.baseline_arm;
+  $("after-title").textContent = story.arm;
+  $("before-output").textContent = item.before.text;
+  $("after-output").textContent = item.after.text;
+  $("before-pred").textContent = `prediction: ${item.before.pred ?? "—"}`;
+  $("after-pred").textContent = `prediction: ${item.after.pred ?? "—"}`;
 }
 
 async function loadLibrary() {

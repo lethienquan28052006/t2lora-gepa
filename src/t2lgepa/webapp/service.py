@@ -62,6 +62,14 @@ class DemoService:
         if task not in self.cfg.tasks:
             raise ValueError(f"unknown task {task!r}")
         example = random.choice(self._splits(task).test)
+        return self.test_item(task, example.id)
+
+    def test_item(self, task: str, example_id: str) -> dict | None:
+        if task not in self.cfg.tasks:
+            raise ValueError(f"unknown task {task!r}")
+        example = next((item for item in self._splits(task).test if item.id == example_id), None)
+        if example is None:
+            return None
         return {
             "id": example.id,
             "task": example.task,

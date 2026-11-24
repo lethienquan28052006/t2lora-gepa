@@ -87,6 +87,32 @@ try {
   assert.equal(await page.locator("#cards .verdict:has-text('UNSCORED')").count(), 4);
 
   await page.click("#prompt-tab");
+  await page.waitForSelector("#story-list .story-card:nth-child(4)");
+  assert.equal(await page.locator("#story-list .story-card").count(), 4);
+  assert.equal(await page.locator("#story-list .story-card").first().getAttribute("data-story"), "gepa-arc-challenge");
+  assert.match(await page.locator("#story-method").innerText(), /ARC-C/);
+  assert.notEqual(await page.locator("#gallery-best-prompt").innerText(), await page.locator("#gallery-seed-prompt").innerText());
+  assert.ok(await page.locator("#story-changes li").count() >= 2);
+  assert.equal(await page.locator("#case-list .case-card").count(), 3);
+  assert.match(await page.locator("#before-verdict").innerText(), /WRONG/);
+  assert.match(await page.locator("#after-verdict").innerText(), /CORRECT/);
+  assert.match(await page.locator("#case-gold").innerText(), /gold/i);
+  assert.match(await page.locator("#case-disclaimer").innerText(), /selected.*not.*aggregate/i);
+  const firstCaseId = await page.locator("#case-detail").getAttribute("data-case");
+  await page.locator("#case-list .case-card").nth(1).click();
+  assert.notEqual(await page.locator("#case-detail").getAttribute("data-case"), firstCaseId);
+  await page.locator("#case-list .case-card").nth(1).focus();
+  await page.keyboard.press("Enter");
+  assert.equal(await page.locator("#case-list .case-card").nth(1).getAttribute("aria-pressed"), "true");
+  await page.screenshot({ path: path.join(out, "03-gepa-example-gallery.png"), fullPage: true });
+
+  await page.locator('[data-story="t2l-gepa-boolq"]').click();
+  assert.match(await page.locator("#story-title").innerText(), /BoolQ/);
+  assert.match(await page.locator("#story-changes").innerText(), /passage/i);
+  assert.notEqual(await page.locator("#gallery-best-prompt").innerText(), await page.locator("#gallery-seed-prompt").innerText());
+  await page.locator("#raw-explorer > summary").click();
+  await page.locator(".task-tab", { hasText: "GSM8K" }).click();
+  await page.locator("[data-search-arm='gepa_3shot']").click();
   await page.waitForSelector("#unchanged-note:not([hidden])");
   assert.match(await page.locator("#unchanged-note").innerText(), /No better prompt found/);
   assert.equal(await page.locator("#selected-prompt").innerText(), await page.locator("#seed-prompt").innerText());
@@ -124,6 +150,51 @@ try {
   assert.doesNotMatch(await page.locator("#selected-prompt").innerText(), /STALE BOOLQ RESPONSE/,
     "an older, slower history response must not overwrite the latest task selection");
   await page.unroute("**/api/prompt-library?*");
+
+  await page.route("**/api/prompt-examples", (route) => route.fulfill({ json: { stories: [] } }));
+  await page.click("#playground-tab");
+  await page.click("#prompt-tab");
+  await page.waitForSelector("#gallery-empty:not([hidden])");
+  assert.match(await page.locator("#gallery-empty").innerText(), /No stored optimization stories/);
+  assert.equal(await page.locator("#raw-explorer").isVisible(), true);
+  await page.unroute("**/api/prompt-examples");
+  await page.route("**/api/prompt-examples", (route) => route.fulfill({ json: { stories: [{ id: "broken" }] } }));
+  await page.click("#playground-tab");
+  await page.click("#prompt-tab");
+  await page.waitForSelector("#gallery-status:not([hidden])");
+  assert.match(await page.locator("#gallery-status").innerText(), /could not be displayed/i);
+  await page.unroute("**/api/prompt-examples");
+  await page.click("#playground-tab");
+  await page.click("#prompt-tab");
+  await page.waitForSelector("#story-list .story-card:nth-child(4)");
+
+  // Malformed nested cases must be dropped without suppressing healthy stories in either order.
+  for (const malformedIndex of [0, 2]) {
+    await page.route("**/api/prompt-examples", async (route) => {
+      const response = await route.fetch();
+      const body = await response.json();
+      const malformed = structuredClone(body.stories[0]);
+      malformed.id = `broken-options-${malformedIndex}`;
+      malformed.cases[0].options = { invalid: "shape" };
+      body.stories.splice(malformedIndex, 0, malformed);
+      await route.fulfill({ response, json: body });
+    });
+    await page.goto(baseUrl, { waitUntil: "networkidle" });
+    await page.click("#prompt-tab");
+    await page.waitForSelector("#story-list .story-card:nth-child(4)");
+    assert.equal(await page.locator("#story-list .story-card").count(), 4);
+    assert.equal(await page.locator(`[data-story="broken-options-${malformedIndex}"]`).count(), 0);
+    for (const storyId of ["gepa-arc-challenge", "t2l-gepa-arc-challenge", "t2l-gepa-boolq", "t2l-gepa-hellaswag"]) {
+      await page.locator(`[data-story="${storyId}"]`).click();
+      assert.equal(await page.locator("#story-detail").isVisible(), true);
+      assert.ok((await page.locator("#after-output").innerText()).length > 0);
+    }
+    await page.waitForFunction(() => document.getElementById("library-status").hidden);
+    await page.unroute("**/api/prompt-examples");
+  }
+  await page.goto(baseUrl, { waitUntil: "networkidle" });
+  await page.click("#prompt-tab");
+  await page.waitForSelector("#story-list .story-card:nth-child(4)");
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: path.join(out, "05-mobile-library.png"), fullPage: true });
