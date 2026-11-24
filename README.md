@@ -52,7 +52,7 @@ BoolQ +3.3 [+1.6, +5.1]; GSM8K and ARC-Challenge are flat.
 The previous independent execution of the same protocol gave +1.1 pp for the combination and
 +2.0 pp for GEPA alone, against +0.1 and +0.2 here. The deterministic arms moved ≤0.3 pp between
 the two executions, so the swing is in the search, not in the evaluation: in this run GEPA
-returned its **seed instruction unchanged** on 4 of 5 tasks for `gepa_3shot` and 3 of 5 for
+returned its **seed instruction unchanged** on 4 of 5 tasks for `gepa_3shot` and 2 of 5 for
 `t2l_gepa_opt`. Every seed and best prompt is stored, so this is inspectable, not anecdote.
 
 The earlier composition controls still stand: transferring a base-model prompt onto the adapter
