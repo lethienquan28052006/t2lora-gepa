@@ -46,8 +46,12 @@ def canonical_note(results_dir: str | Path, tasks: list[str]) -> str:
 
 
 def create_app(service: DemoService, results_dir: str | Path | None = None) -> FastAPI:
+    from t2lgepa.webapp.examples import PromptExampleLibrary
+
     app = FastAPI(title="Mistral adaptation demo")
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
+    directory = Path(results_dir) if results_dir is not None else service.results_dir
+    example_library = PromptExampleLibrary(directory, getattr(service, "test_item", None))
 
     @app.get("/")
     def index() -> FileResponse:
@@ -85,6 +89,10 @@ def create_app(service: DemoService, results_dir: str | Path | None = None) -> F
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except GenerationError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    @app.get("/api/prompt-examples")
+    def prompt_examples() -> dict:
+        return {"stories": example_library.stories()}
 
     @app.get("/api/prompt-library")
     def prompt_library(task: str, arm: str) -> dict:

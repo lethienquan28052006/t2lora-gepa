@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Compare four adaptation methods and inspect real GEPA prompt histories on Mistral-7B." />
   <title>AdaptLab · Mistral-7B adaptation playground</title>
-  <link rel="stylesheet" href="/static/style.css?v=20261122-6" />
+  <link rel="stylesheet" href="/static/style.css?v=20261124-1" />
 </head>
 <body>
 <header class="topbar">
@@ -57,22 +57,48 @@
   </section>
 
   <section id="prompt-view" class="view" hidden>
-    <div class="library-toolbar"><div><p class="section-label">Stored search artifacts</p><h2>See what GEPA actually changed</h2></div><div class="arm-switch" id="search-arms"><button class="active" data-search-arm="gepa_3shot">GEPA on base</button><button data-search-arm="t2l_gepa_opt">GEPA with T2L adapter</button></div></div>
-    <div id="library-status" class="notice" hidden></div>
-    <div class="library-grid">
-      <aside class="panel candidate-panel"><div class="panel-head"><div><p class="section-label">Search trajectory</p><h3>Candidates</h3></div><span class="pill" id="candidate-count"></span></div><div id="candidate-list" class="candidate-list"></div><div class="curve-wrap"><div class="curve-title">Pareto score · by metric calls</div><div class="curve" id="score-curve" role="img" aria-label="Pareto scores"></div></div></aside>
-      <section class="prompt-workbench">
-        <article class="prompt-card seed-card"><div class="prompt-card-head"><div><p class="section-label">Starting point</p><h3>Seed instruction</h3></div><button class="text-button" data-copy="seed">Copy</button></div><pre id="seed-prompt" class="prompt-text"></pre></article>
-        <article class="prompt-card selected-card" id="selected-card"><div class="prompt-card-head"><div><p class="section-label" id="selected-label">Selected candidate</p><h3 id="selected-title">Best instruction</h3></div><button class="text-button" data-copy="selected">Copy</button></div><pre id="selected-prompt" class="prompt-text"></pre></article>
-        <article class="notice unchanged" id="unchanged-note" hidden><b>No better prompt found.</b> GEPA returned the seed instruction for this arm and dataset. That is a valid result — there is no artificial diff to display.</article>
-        <details class="rendered-example"><summary>Inspect one fully rendered prompt (demos + instruction + item)</summary><pre id="rendered-example"></pre></details>
+    <div class="gallery-intro"><div><p class="section-label">Real optimization stories</p><h2>See what GEPA changed — and where it helped.</h2><p>Four changed prompt pairs from the stored run, followed by held-out answers that changed from wrong to right.</p></div><span class="gallery-run">mistral-7b-v1 · read-only artifacts</span></div>
+    <div id="gallery-status" class="notice error" role="alert" hidden></div>
+    <div id="gallery-empty" class="notice" hidden><b>No stored optimization stories.</b> The raw candidate explorer is still available below.</div>
+    <div id="story-list" class="story-list" aria-label="Optimized prompt stories"></div>
+    <article id="story-detail" class="story-detail" hidden>
+      <header class="story-header"><div><p class="section-label" id="story-method"></p><h2 id="story-title"></h2></div><div class="story-proof"><b id="story-case-count"></b><span>selected corrections<br />from 1,000 held-out items</span></div></header>
+      <section class="change-panel"><div><p class="section-label">Instruction evolution</p><h3>What GEPA changed</h3></div><ol id="story-changes"></ol></section>
+      <div class="gallery-prompt-grid">
+        <article class="prompt-card seed-card"><div class="prompt-card-head"><div><p class="section-label">Before optimization</p><h3>Starting instruction</h3></div></div><pre id="gallery-seed-prompt" class="prompt-text"></pre></article>
+        <article class="prompt-card selected-card"><div class="prompt-card-head"><div><p class="section-label">After optimization</p><h3>Best stored instruction</h3></div></div><pre id="gallery-best-prompt" class="prompt-text"></pre></article>
+      </div>
+      <section class="case-study"><div class="case-study-head"><div><p class="section-label">Concrete outcomes</p><h3>Where the optimized instruction helped</h3></div><span class="pill">Same input · same model weights</span></div><p class="case-disclaimer" id="case-disclaimer">Selected held-out examples where the stored starting-prompt baseline was wrong and the optimized arm was right. They illustrate individual corrections, not aggregate or statistically significant improvement.</p><div id="case-list" class="case-list" aria-label="Corrected test examples"></div>
+        <article id="case-detail" class="case-detail">
+          <div class="case-context"><div class="case-meta"><span id="case-id"></span><span id="case-gold" class="gold-label"></span></div><p id="case-question"></p><div id="case-options" class="case-options"></div><details id="case-passage-wrap" hidden><summary>Read the source passage</summary><pre id="case-passage"></pre></details></div>
+          <div class="case-output-grid">
+            <article class="case-output before"><div class="case-output-head"><div><p class="section-label">Starting prompt baseline</p><h4 id="before-title"></h4></div><span id="before-verdict" class="verdict wrong">✕ WRONG</span></div><pre id="before-output"></pre><p id="before-pred" class="case-pred"></p></article>
+            <article class="case-output after"><div class="case-output-head"><div><p class="section-label">Optimized prompt</p><h4 id="after-title"></h4></div><span id="after-verdict" class="verdict correct">✓ CORRECT</span></div><pre id="after-output"></pre><p id="after-pred" class="case-pred"></p></article>
+          </div>
+        </article>
       </section>
-    </div>
+    </article>
+
+    <details id="raw-explorer" class="raw-explorer"><summary><span><b>Explore full candidate history</b><small>Seed, every candidate, Pareto scores and unchanged searches</small></span><span>Open explorer →</span></summary>
+      <div class="raw-explorer-body">
+        <div class="library-toolbar"><div><p class="section-label">Stored search artifacts</p><h2>Inspect the complete trajectory</h2></div><div class="arm-switch" id="search-arms"><button class="active" data-search-arm="gepa_3shot">GEPA on base</button><button data-search-arm="t2l_gepa_opt">GEPA with T2L adapter</button></div></div>
+        <div id="library-status" class="notice" hidden></div>
+        <div class="library-grid">
+          <aside class="panel candidate-panel"><div class="panel-head"><div><p class="section-label">Search trajectory</p><h3>Candidates</h3></div><span class="pill" id="candidate-count"></span></div><div id="candidate-list" class="candidate-list"></div><div class="curve-wrap"><div class="curve-title">Pareto score · by metric calls</div><div class="curve" id="score-curve" role="img" aria-label="Pareto scores"></div></div></aside>
+          <section class="prompt-workbench">
+            <article class="prompt-card seed-card"><div class="prompt-card-head"><div><p class="section-label">Starting point</p><h3>Seed instruction</h3></div><button class="text-button" data-copy="seed">Copy</button></div><pre id="seed-prompt" class="prompt-text"></pre></article>
+            <article class="prompt-card selected-card" id="selected-card"><div class="prompt-card-head"><div><p class="section-label" id="selected-label">Selected candidate</p><h3 id="selected-title">Best instruction</h3></div><button class="text-button" data-copy="selected">Copy</button></div><pre id="selected-prompt" class="prompt-text"></pre></article>
+            <article class="notice unchanged" id="unchanged-note" hidden><b>No better prompt found.</b> GEPA returned the seed instruction for this arm and dataset. That is a valid result — there is no artificial diff to display.</article>
+            <details class="rendered-example"><summary>Inspect one fully rendered prompt (demos + instruction + item)</summary><pre id="rendered-example"></pre></details>
+          </section>
+        </div>
+      </div>
+    </details>
   </section>
 </main>
 
 <footer class="footer"><span>Stored run: <b>mistral-7b-v1</b></span><span id="footer-model"></span></footer>
 <dialog id="prompt-dialog"><div class="dialog-head"><h3 id="dialog-title">Exact prompt sent</h3><button id="dialog-close" class="text-button" aria-label="Close prompt">✕</button></div><pre id="dialog-prompt"></pre></dialog>
-<script src="/static/app.js?v=20261122-6"></script>
+<script src="/static/app.js?v=20261124-1"></script>
 </body>
 </html>
