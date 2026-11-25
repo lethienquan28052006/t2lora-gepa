@@ -11,6 +11,8 @@ Public: **https://cs222.lethienquan.site**
 ```
 
 An existing inference endpoint on `127.0.0.1:8010` or web app on `127.0.0.1:7860` is reused.
+Cold start loads ~13.5 GiB of weights from Ceph, so the script waits up to 900 s
+(`MODEL_WAIT_SECONDS`) and prints the vLLM log tail if the server dies or the wait expires.
 Logs are in `/tmp/t2l-demo/`. The page reads the canonical run from
 `/data/quan.lt/temp/t2l-mistral/runs/mistral-7b-v1/results`; override with `RUN_DIR` if needed.
 The named Cloudflare tunnel routes the public hostname to port 7860.

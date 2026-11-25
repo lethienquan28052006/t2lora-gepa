@@ -16,6 +16,9 @@ HOSTNAME_PUBLIC="${HOSTNAME_PUBLIC:-cs222.lethienquan.site}"
 TUNNEL_ID="${TUNNEL_ID:-68bc1088-ed4b-4c81-b495-0881666d937f}"
 LOGDIR="${LOGDIR:-/tmp/t2l-demo}"
 RUN_DIR="${RUN_DIR:-$ROOT/runs/mistral-7b-v1/results}"
+# Cold start loads 13.5 GiB of weights from Ceph, then compiles/captures CUDA graphs.
+# On a busy box this easily exceeds six minutes, so wait up to 15 by default.
+MODEL_WAIT_SECONDS="${MODEL_WAIT_SECONDS:-900}"
 
 TUNNEL=0
 for arg in "$@"; do
@@ -44,7 +47,15 @@ trap cleanup INT TERM EXIT
 
 wait_for_models() {
   local want=6
-  for _ in $(seq 1 180); do
+  local pid="${1:-}"
+  local deadline=$(( $(date +%s) + MODEL_WAIT_SECONDS ))
+  local last_report=0
+  while [ "$(date +%s)" -lt "$deadline" ]; do
+    if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then
+      echo "[demo] model server exited before becoming ready; see $LOGDIR/vllm.log" >&2
+      tail -n 40 "$LOGDIR/vllm.log" >&2 || true
+      return 1
+    fi
     local n
     n=$(curl -sf "http://localhost:${MODEL_PORT}/v1/models" 2>/dev/null \
         | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["data"]))' 2>/dev/null || echo 0)
@@ -52,9 +63,17 @@ wait_for_models() {
       echo "[demo] model server ready with $n models"
       return 0
     fi
+    local now
+    now=$(date +%s)
+    if [ $((now - last_report)) -ge 30 ]; then
+      echo "[demo] waiting for model server (${n}/${want} models, $((deadline - now))s left)"
+      last_report=$now
+    fi
     sleep 2
   done
-  echo "[demo] model server did not become ready" >&2
+  echo "[demo] model server did not become ready after ${MODEL_WAIT_SECONDS}s" >&2
+  echo "[demo] last 40 lines of $LOGDIR/vllm.log:" >&2
+  tail -n 40 "$LOGDIR/vllm.log" >&2 || true
   return 1
 }
 
@@ -66,8 +85,9 @@ else
   echo "[demo] starting vLLM on GPU ${GPU} (:${MODEL_PORT})"
   CUDA_VISIBLE_DEVICES="$GPU" "$REPO/.venv-serve/bin/vllm" serve \
     --config "$ROOT/serve_demo.yaml" > "$LOGDIR/vllm.log" 2>&1 &
-  PIDS+=($!)
-  wait_for_models
+  MODEL_PID=$!
+  PIDS+=("$MODEL_PID")
+  wait_for_models "$MODEL_PID"
 fi
 
 if curl -sf "http://localhost:${WEB_PORT}/api/meta" >/dev/null 2>&1; then
