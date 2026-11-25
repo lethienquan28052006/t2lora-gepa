@@ -1,0 +1,524 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\usepackage[vietnamese]{babel}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{needspace}
+\usepackage{amsmath}
+
+\setsansfont{BeVietnamPro}[
+  Path=slides/fonts/, Extension=.ttf,
+  UprightFont=*-Regular, BoldFont=*-SemiBold,
+  ItalicFont=*-Italic, BoldItalicFont=*-SemiBoldItalic]
+\setmonofont{lmmono10-regular.otf}[Scale=MatchLowercase]
+
+\definecolor{ink}{HTML}{1F2937}
+\definecolor{muted}{HTML}{64748B}
+\definecolor{accent}{HTML}{1D4ED8}
+\definecolor{soft}{HTML}{EFF6FF}
+\definecolor{rule}{HTML}{CBD5E1}
+\definecolor{codebg}{HTML}{F8FAFC}
+\definecolor{warn}{HTML}{B45309}
+\definecolor{warnbg}{HTML}{FFF7ED}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accent,
+  urlcolor=accent,
+  pdftitle={Hướng dẫn sử dụng repo để benchmark qua API từ xa},
+  pdfauthor={CS222 -- Nhóm 5}
+}
+\urlstyle{same}
+
+\titleformat{\section}{\Large\bfseries\color{accent}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.2em}{0.45em}
+\titlespacing*{\subsection}{0pt}{0.9em}{0.3em}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.35em}
+\setlist[itemize]{topsep=0.2em,itemsep=0.15em,leftmargin=1.4em}
+\setlist[enumerate]{topsep=0.2em,itemsep=0.2em,leftmargin=1.6em}
+
+\lstdefinestyle{shell}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{rule},
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  xleftmargin=0.4em,
+  xrightmargin=0.4em,
+  aboveskip=0.45em,
+  belowskip=0.55em
+}
+\lstset{style=shell}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\Repo}{\texttt{t2lora-gepa}}
+\newcommand{\Important}[1]{%
+  \par\smallskip\noindent
+  \colorbox{warnbg}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{%
+    \raggedright\textcolor{warn}{\textbf{Lưu ý:}} #1}}\par\smallskip}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{muted}Hướng dẫn benchmark qua API từ xa}
+\fancyhead[R]{\small\color{muted}CS222 -- Nhóm 5}
+\fancyfoot[C]{\small\color{muted}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{2.2cm}
+  {\color{accent}\rule{\linewidth}{1.2pt}}\par\vspace{1.0cm}
+  {\Huge\bfseries Hướng dẫn sử dụng repo\\[0.25em] để benchmark qua API từ xa\par}
+  \vspace{0.9cm}
+  {\Large T2L, GEPA và T2L + GEPA\par}
+  \vspace{0.9cm}
+  {\large Repository: \href{https://github.com/lethienquan28052006/t2lora-gepa}{%
+    \texttt{github.com/lethienquan28052006/t2lora-gepa}}\par}
+  \vspace{0.9cm}
+  {\color{accent}\rule{\linewidth}{0.6pt}}\par
+  \vfill
+  {\large CS222 -- Seminar: Prompting and PEFT\par}
+  {\large Nhóm 5\par}
+  \vspace{0.8cm}
+  {\large Cập nhật: 25/11/2026\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Mục đích và phạm vi}
+
+Tài liệu này hướng dẫn dùng repo \Repo{} để chạy benchmark thông qua một \textbf{API OpenAI-compatible từ xa}. Repo không chạy mô hình và không cần cài môi trường suy luận trên máy thực hiện benchmark; toàn bộ việc sinh câu trả lời được gọi sang API của bên cung cấp khác.
+
+Nội dung chỉ mô tả cách vận hành: cài đặt, cấu hình endpoint, kiểm tra API, chạy grid, chạy GEPA, đọc kết quả và mở demo. Tài liệu không trình bày hay diễn giải kết quả accuracy.
+
+\subsection{Luồng tổng quát}
+
+\begin{center}
+\small
+\begin{tabular}{@{}c c c@{}}
+\textbf{1. Cấu hình API} & $\rightarrow$ & \textbf{2. Kiểm tra endpoint} \\
+$\downarrow$ & & $\downarrow$ \\
+\textbf{4. Chạy GEPA} & $\leftarrow$ & \textbf{3. Smoke + chạy grid} \\
+$\downarrow$ & & \\
+\textbf{5. Xuất bảng/bundle} & $\rightarrow$ & \textbf{6. Mở demo qua API từ xa}
+\end{tabular}
+\end{center}
+
+\section{Yêu cầu môi trường}
+
+\begin{itemize}
+  \item Linux hoặc macOS, Python \textbf{3.10 hoặc 3.11}. Repo khai báo \code{>=3.10,<3.12}.
+  \item \code{uv} để quản lý môi trường Python.
+  \item Kết nối mạng tới API benchmark.
+  \item API OpenAI-compatible đã được bên khác chuẩn bị sẵn.
+  \item API reflection cho GEPA, hoặc một endpoint OpenAI-compatible tương đương.
+  \item API key của endpoint benchmark và reflection nếu bên cung cấp yêu cầu.
+\end{itemize}
+
+\Important{Máy chạy repo chỉ gửi request và xử lý kết quả. Không cần cấu hình hay vận hành mô hình trên máy này.}
+
+\section{Cài đặt repo}
+
+\begin{lstlisting}
+git clone https://github.com/lethienquan28052006/t2lora-gepa.git
+cd t2lora-gepa
+uv sync --extra dev
+uv run pytest -q
+\end{lstlisting}
+
+Kiểm tra code style khi cần:
+
+\begin{lstlisting}
+uv run ruff check src tests scripts
+\end{lstlisting}
+
+\section{Chuẩn bị thư mục làm việc}
+
+Các đường dẫn dưới đây chỉ là ví dụ:
+
+\begin{lstlisting}
+export REPO_ROOT="$PWD"
+export WORK_ROOT="/data/benchmarks/t2l-mistral"
+export RUN_DIR="$WORK_ROOT/runs/my-run/results"
+export CONFIG="$REPO_ROOT/configs/mistral.remote.yaml"
+
+mkdir -p "$WORK_ROOT"/{data,runs,reports,artifacts}
+mkdir -p "$RUN_DIR"
+\end{lstlisting}
+
+Tạo config riêng để không sửa file mẫu:
+
+\begin{lstlisting}
+cp configs/mistral.yaml "$CONFIG"
+\end{lstlisting}
+
+\section{Cấu hình API từ xa}
+
+\subsection{Thông tin cần lấy từ bên cung cấp API}
+
+Trước khi chạy, cần xác nhận:
+
+\begin{enumerate}
+  \item Base URL của API, ví dụ \code{https://inference.example.com}.
+  \item Tên model gốc dùng trong trường \code{model} của request.
+  \item API có phục vụ đủ các module LoRA dạng \code{t2l_<task>} hay không.
+  \item Cách xác thực: bearer token, header tùy chỉnh hoặc mạng nội bộ không cần key.
+  \item Base URL và model của reflection API dùng cho GEPA.
+\end{enumerate}
+
+Repo đặt tên adapter theo quy ước cố định:
+
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Task} & \textbf{Tên model gửi lên API} \\
+\midrule
+GSM8K & \code{t2l_gsm8k} \\
+ARC-Challenge & \code{t2l_arc_challenge} \\
+BoolQ & \code{t2l_boolq} \\
+HellaSwag & \code{t2l_hellaswag} \\
+WinoGrande & \code{t2l_winogrande} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\Important{API phải nhận đúng các tên \code{t2l_<task>} ở trên. Nếu bên cung cấp dùng tên khác, cần thống nhất lại trước khi chạy; repo không tự ánh xạ tên model.}
+
+\subsection{Các trường cần sửa trong config}
+
+Giữ nguyên các trường hạ tầng khác từ file mẫu. Chỉ cần kiểm tra các trường liên quan endpoint và phạm vi chạy:
+
+\begin{center}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.32\linewidth}>{\raggedright\arraybackslash}p{0.60\linewidth}@{}}
+\toprule
+\textbf{Trường} & \textbf{Ý nghĩa} \\
+\midrule
+\code{model_id} & Tên model gốc mà API nhận trong request. \\
+\code{reflection_model} & Model dùng cho reflection của GEPA. \\
+\code{reflection_base_url} & Base URL OpenAI-compatible của reflection API từ xa. Phải đặt cụ thể. \\
+\code{reflection_api_key_env} & Tên biến môi trường chứa key reflection. \\
+\code{tasks} & Danh sách benchmark cần chạy. \\
+\code{seeds} & Seed cho các lần search GEPA. \\
+\code{gepa_budget} & Số metric call tối đa cho mỗi task. \\
+\code{results_dir} & Nơi ghi kết quả. \\
+\code{cache_dir} & Nơi cache dữ liệu benchmark tải về. \\
+\code{max_eval_items} & Số câu test tối đa cho mỗi arm và task. \\
+\code{max_tokens}, \code{temperature} & Decode cho câu trả lời cuối. \\
+\code{rollout_temperature}, \code{rollout_top_p} & Decode cho rollout trong search. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Ví dụ phần cấu hình API:
+
+\begin{lstlisting}
+model_id: mistralai/Mistral-7B-Instruct-v0.2
+reflection_model: deepseek-v4.1-flash
+reflection_base_url: https://reflection.example.com/v1
+reflection_api_key_env: REFLECT_API_KEY
+
+tasks: [gsm8k, arc_challenge, boolq, hellaswag, winogrande]
+seeds: [0]
+gepa_budget: 1500
+results_dir: /data/benchmarks/t2l-mistral/runs/my-run/results
+cache_dir: /data/benchmarks/t2l-mistral/data
+max_eval_items: 1000
+\end{lstlisting}
+
+\subsection{Biến môi trường}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.54\linewidth}@{}}
+\toprule
+\textbf{Biến} & \textbf{Dùng khi nào} \\
+\midrule
+\code{BASE_URL} & Base URL của API benchmark, không cần hậu tố \code{/v1} nếu script đã tự xử lý. \\
+\code{INFERENCE_API_KEY} & Bearer key của API benchmark, nếu có. \\
+\code{REFLECT_API_KEY} & Bearer key của reflection API, nếu có. \\
+\code{TARGET_API_KEY_ENV} & Tên biến chứa key benchmark khi truyền cho \code{run_grid.py}. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{lstlisting}
+export BASE_URL="https://inference.example.com"
+export INFERENCE_API_KEY="..."
+export REFLECT_API_KEY="..."
+\end{lstlisting}
+
+\subsection{Kiểm tra endpoint}
+
+Kiểm tra danh sách model:
+
+\begin{lstlisting}
+curl -s "$BASE_URL/v1/models" \
+  -H "Authorization: Bearer $INFERENCE_API_KEY" \
+  | uv run python -m json.tool
+\end{lstlisting}
+
+Danh sách phải có model gốc và đủ các module \code{t2l_<task>}. Nếu endpoint không cần key, bỏ header \code{Authorization}.
+
+Thử một request sinh văn bản:
+
+\begin{lstlisting}
+curl -s "$BASE_URL/v1/chat/completions" \
+  -H "Authorization: Bearer $INFERENCE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "mistralai/Mistral-7B-Instruct-v0.2",
+    "messages": [{"role": "user", "content": "Reply with OK."}],
+    "max_tokens": 8,
+    "temperature": 0
+  }' | uv run python -m json.tool
+\end{lstlisting}
+
+Sau đó thử một module adapter, ví dụ \code{t2l_gsm8k}, bằng cách đổi trường \code{model}.
+
+\section{Smoke test}
+
+Smoke test gọi API trên một slice nhỏ trước khi chạy toàn bộ benchmark:
+
+\begin{lstlisting}
+uv run python scripts/mistral_smoke.py \
+  --config "$CONFIG" \
+  --base-url "$BASE_URL" \
+  --limit 20
+\end{lstlisting}
+
+Nếu API yêu cầu bearer key, \code{mistral_smoke.py} hiện chỉ nhận \code{--base-url} và không truyền key. Dùng một endpoint nội bộ không yêu cầu key, hoặc bổ sung cơ chế truyền key trước khi dùng script này với endpoint cần xác thực.
+
+Smoke test kiểm tra bốn arm và phát hiện adapter không phản hồi đúng. Nếu lệnh trả mã khác 0, dừng lại và kiểm tra endpoint trước khi chạy full grid.
+
+\section{Chạy benchmark grid}
+
+\subsection{Kiểm tra kế hoạch job}
+
+\begin{lstlisting}
+uv run python scripts/run_grid.py \
+  --config "$CONFIG" \
+  --results-dir "$RUN_DIR" \
+  --dry-run
+\end{lstlisting}
+
+Lệnh này không gọi API; chỉ in danh sách job, task và seed.
+
+\subsection{Chạy các arm không dùng GEPA}
+
+\begin{lstlisting}
+uv run python scripts/run_grid.py \
+  --config "$CONFIG" \
+  --base-url "$BASE_URL" \
+  --target-api-key-env INFERENCE_API_KEY \
+  --arms base,icl3,t2l,t2l_icl \
+  --no-gepa \
+  --results-dir "$RUN_DIR"
+\end{lstlisting}
+
+Nếu API không cần key, bỏ \code{--target-api-key-env}.
+
+\subsection{Chạy GEPA trên base model}
+
+\begin{lstlisting}
+uv run python scripts/run_grid.py \
+  --config "$CONFIG" \
+  --base-url "$BASE_URL" \
+  --target-api-key-env INFERENCE_API_KEY \
+  --gepa-only \
+  --gepa-arms gepa_3shot \
+  --gepa-tasks gsm8k \
+  --gepa-seeds 0 \
+  --results-dir "$RUN_DIR"
+\end{lstlisting}
+
+Chạy một task trước để kiểm tra reflection API và feedback. Khi ổn, bỏ \code{--gepa-tasks} để dùng toàn bộ task trong config.
+
+\subsection{Chạy GEPA đồng tối ưu với adapter}
+
+Sau khi các arm \code{base}, \code{icl3}, \code{t2l}, \code{t2l_icl} đã có kết quả trong \code{$RUN_DIR}:
+
+\begin{lstlisting}
+uv run python scripts/run_grid.py \
+  --config "$CONFIG" \
+  --base-url "$BASE_URL" \
+  --target-api-key-env INFERENCE_API_KEY \
+  --gepa-only \
+  --gepa-arms t2l_gepa_opt \
+  --gepa-seeds 0 \
+  --results-dir "$RUN_DIR"
+\end{lstlisting}
+
+Mỗi rollout và lần chấm cuối của arm này gửi request với model \code{t2l_<task>} tới API từ xa.
+
+\subsection{Chạy toàn bộ trong một lệnh}
+
+Khi pipeline đã ổn định:
+
+\begin{lstlisting}
+uv run python scripts/run_grid.py \
+  --config "$CONFIG" \
+  --base-url "$BASE_URL" \
+  --target-api-key-env INFERENCE_API_KEY \
+  --arms base,icl3,t2l,t2l_icl \
+  --gepa-arms gepa_3shot,t2l_gepa_opt \
+  --gepa-seeds 0 \
+  --results-dir "$RUN_DIR"
+\end{lstlisting}
+
+\section{Đọc output và kiểm tra kết quả}
+
+Mỗi job ghi một file summary \code{.jsonl}, cùng các file prompt và gate:
+
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.52\linewidth}>{\raggedright\arraybackslash}p{0.40\linewidth}@{}}
+\toprule
+\textbf{File} & \textbf{Nội dung} \\
+\midrule
+\code{<arm>_<task>_s0.jsonl} & Summary và per-item record. \\
+\code{<arm>_<task>_s0.gate.json} & Kết quả gate và trạng thái search. \\
+\code{gepa_3shot_<task>_s0_seed_prompt.txt} & Instruction seed của GEPA. \\
+\code{gepa_3shot_<task>_s0_best_prompt.txt} & Instruction tốt nhất tìm được. \\
+\code{*_candidates.json} & Lịch sử ứng viên và điểm Pareto. \\
+\code{*_rendered_example.txt} & Prompt đầy đủ của seed và best. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Gate và bảng kết quả}
+
+\begin{lstlisting}
+uv run python scripts/eval_mistral_gate.py \
+  --results "$RUN_DIR"
+
+uv run python scripts/make_tables.py \
+  --results "$RUN_DIR" \
+  --out "$WORK_ROOT/reports/my-run"
+\end{lstlisting}
+
+Có thể dùng \code{build_report_v1.py} để sinh thêm paired CI và prompt history:
+
+\begin{lstlisting}
+uv run python scripts/build_report_v1.py \
+  --config "$CONFIG" \
+  --run-dir "$RUN_DIR" \
+  --out "$WORK_ROOT/reports/my-run-v1"
+\end{lstlisting}
+
+\subsection{Kiểm tra tính đầy đủ}
+
+\begin{enumerate}
+  \item Mỗi task có đủ các arm dự kiến.
+  \item Số item test khớp \code{max_eval_items} hoặc được ghi rõ là slice nhỏ.
+  \item Gate không báo lỗi adapter.
+  \item Prompt seed/best và candidate history tồn tại với các arm GEPA.
+  \item Không có test item xuất hiện trong train hoặc pareto split.
+\end{enumerate}
+
+\section{Đóng gói kết quả}
+
+Nếu chỉ cần lưu kết quả và prompt, giữ nguyên \code{RUN_DIR} và các bảng trong \code{$WORK_ROOT/reports}.
+
+Nếu bên cung cấp API cũng cung cấp thư mục adapter để đóng gói, có thể tạo artifact bundle:
+
+\begin{lstlisting}
+uv run python scripts/build_artifact_bundle.py \
+  --config "$CONFIG" \
+  --run-dir "$RUN_DIR" \
+  --lora-root "/duong/dan/toi/adapters" \
+  --out "$WORK_ROOT/artifacts/my-run" \
+  --tarball "$WORK_ROOT/artifacts/my-run.tar.gz"
+\end{lstlisting}
+
+Nếu không có thư mục adapter, chỉ cần giữ \code{RUN_DIR} và các bảng kết quả; không cần tạo bundle.
+
+\section{Mở demo qua API từ xa}
+
+Web app chỉ cần trỏ tới API đã cấu hình:
+
+\begin{lstlisting}
+PYTHONPATH="$PWD/src" uv run python -m t2lgepa.webapp.app \
+  --config "$CONFIG" \
+  --results "$RUN_DIR" \
+  --base-url "$BASE_URL" \
+  --host 0.0.0.0 \
+  --port 7860
+\end{lstlisting}
+
+Mở \code{http://localhost:7860}. Web app đọc prompt/result đã lưu và gọi API từ xa khi chạy so sánh trực tiếp.
+
+\Important{Web app hiện không truyền bearer key của endpoint benchmark. Nếu API yêu cầu xác thực, dùng một proxy nội bộ đã gắn key hoặc bổ sung cơ chế truyền key trước khi mở demo.}
+
+\section{Checklist trước khi chạy dài}
+
+\begin{enumerate}
+  \item \code{uv run pytest -q} pass.
+  \item \code{/v1/models} trả về model gốc và đủ \code{t2l_<task>}.
+  \item Một request chat completion đơn giản chạy thành công.
+  \item Reflection API nhận key và trả về văn bản.
+  \item Smoke test trên slice nhỏ chạy thành công.
+  \item \code{run_grid.py --dry-run} hiện đúng job.
+  \item \code{RUN_DIR} là thư mục mới, không trộn với lần chạy khác.
+  \item Đủ dung lượng đĩa cho cache, generation và báo cáo.
+\end{enumerate}
+
+\section{Lỗi thường gặp}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.54\linewidth}@{}}
+\toprule
+\textbf{Hiện tượng} & \textbf{Cách kiểm tra} \\
+\midrule
+Không kết nối được API & Kiểm tra \code{BASE_URL}, mạng và \code{curl \$BASE_URL/v1/models}. \\
+401/403 & Kiểm tra biến key và \code{--target-api-key-env}. \\
+Thiếu model \code{t2l_<task>} & Yêu cầu bên API bật đúng tên module; kiểm tra lại \code{/v1/models}. \\
+Reflection lỗi & Kiểm tra \code{reflection_base_url}, model và \code{REFLECT_API_KEY}. \\
+GEPA tạo 0 candidate & Kiểm tra feedback và reflection model. \\
+Gate fail & Đọc \code{*.gate.json}; không dùng kết quả nếu adapter không phản hồi đúng. \\
+Thiếu arm & Chạy lại đúng \code{--arms}/\code{--gepa-arms}; không trộn run directory. \\
+Demo không gọi được API & Dùng proxy đã gắn key hoặc bổ sung auth cho web app. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Nguyên tắc sử dụng kết quả}
+
+\begin{itemize}
+  \item Chỉ so sánh các arm trong cùng harness, cùng split, cùng extractor và cùng decode settings.
+  \item Không dùng test item để chọn prompt, adapter hoặc tham số.
+  \item Không so tuyệt đối score với paper nếu prompt, extractor hoặc harness khác.
+  \item Luôn lưu config, seed, commit SHA và run directory cùng kết quả.
+  \item Với GEPA, đọc cả seed/best prompt và candidate history; không chỉ đọc score cuối.
+  \item Khi nghi ngờ, chạy smoke trên slice nhỏ trước khi chạy toàn bộ.
+\end{itemize}
+
+\vfill
+\begin{center}
+\small\color{muted}
+Hết tài liệu hướng dẫn vận hành.
+\end{center}
+
+\end{document}

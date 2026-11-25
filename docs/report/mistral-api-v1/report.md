@@ -73,7 +73,7 @@ Two independent executions of the identical protocol, same seed, same budgets, s
 - The combination's edge over T2L was **+1.1 pp** in run A and **+0.1 pp** here. It is real at
   best in the ~1 pp range, and **not established** by a single search.
 - Cause, visible in the artifacts: this time GEPA returned the *seed* instruction unchanged on
-  4 of 5 tasks for `gepa_3shot` and on 3 of 5 for `t2l_gepa_opt`
+  4 of 5 tasks for `gepa_3shot` and on 2 of 5 for `t2l_gepa_opt`
   (`prompts.md` shows seed and best side by side). Run A found better instructions on more tasks.
 - Gate caveat: the recorded gate compares the Pareto score with the *base model's* accuracy, so
   "pass" does not by itself mean the searched prompt beat its seed.

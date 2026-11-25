@@ -1,0 +1,28 @@
+%=======================================================================
+%  Slide 55 - Chi phí và hạn chế  (1:1 with slide-cs222.pptx.pdf)
+%=======================================================================
+\section{Chi phí \& Hạn chế}
+
+\begin{frame}{Chi phí và hạn chế}
+  \vspace{1.2em}
+  \centering
+  \begin{tikzpicture}[font=\normalsize,
+      card/.style={fill=white, draw=Rule, rounded corners=5pt, minimum height=3.4cm,
+                   anchor=north west, inner sep=0.35cm}]
+    % card 1
+    \node[card, fill=AmberSoft, draw=Amber, text width=3.2cm, align=left] (c1) at (0,0) {%
+      {\scriptsize\color{Muted} T2L: sinh LoRA + trả lời}\\[0.4em]
+      {\color{Amber!85!black}\fontsize{30}{32}\selectfont\bfseries 0,86}\\[0.3em]
+      {\small TFLOPs mỗi câu}};
+    % card 2
+    \node[card, text width=3.2cm, align=left, right=0.35cm of c1.north east, anchor=north west] (c2) {%
+      {\scriptsize\color{Muted} 3-shot ICL}\\[0.4em]
+      {\color{Navy}\fontsize{30}{32}\selectfont\bfseries 4,18}\\[0.3em]
+      {\small TFLOPs mỗi câu}};
+    % card 3
+    \node[card, fill=Panel, text width=5.0cm, align=left, right=0.35cm of c2.north east, anchor=north west] (c3) {%
+      {\bfseries\color{Navy} Hạn chế}\\[0.5em]
+      {\small Phụ thuộc chất lượng mô tả (trong paper do GPT-4o-mini viết)}\\[0.5em]
+      {\small Chưa thử chuyển từ model nhỏ sang model lớn}};
+  \end{tikzpicture}
+\end{frame}

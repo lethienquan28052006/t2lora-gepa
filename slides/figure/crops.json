@@ -1,0 +1,194 @@
+[
+  {
+    "file": "t2l/fig1_train.pdf",
+    "source": "2506.06105v2.pdf",
+    "page": 2,
+    "rect_points": [
+      55.0,
+      66.0,
+      316.0,
+      332.0
+    ],
+    "aspect": 0.981
+  },
+  {
+    "file": "t2l/fig1_scaling.pdf",
+    "source": "2506.06105v2.pdf",
+    "page": 2,
+    "rect_points": [
+      320.0,
+      66.0,
+      546.0,
+      332.0
+    ],
+    "aspect": 0.85
+  },
+  {
+    "file": "t2l/fig2_arch.pdf",
+    "source": "2506.06105v2.pdf",
+    "page": 3,
+    "rect_points": [
+      55.0,
+      66.0,
+      543.0,
+      182.0
+    ],
+    "aspect": 4.207
+  },
+  {
+    "file": "t2l/fig3_error.pdf",
+    "source": "2506.06105v2.pdf",
+    "page": 5,
+    "rect_points": [
+      330.0,
+      260.0,
+      545.0,
+      395.0
+    ],
+    "aspect": 1.593
+  },
+  {
+    "file": "t2l/fig4_qualitative.pdf",
+    "source": "2506.06105v2.pdf",
+    "page": 8,
+    "rect_points": [
+      55.0,
+      66.0,
+      545.0,
+      392.0
+    ],
+    "aspect": 1.503
+  },
+  {
+    "file": "t2l/table1_recon.pdf",
+    "source": "2506.06105v2.pdf",
+    "page": 5,
+    "rect_points": [
+      55.0,
+      103.0,
+      545.0,
+      250.0
+    ],
+    "aspect": 3.333
+  },
+  {
+    "file": "t2l/table2_zeroshot_a.pdf",
+    "source": "2506.06105v2.pdf",
+    "page": 6,
+    "rect_points": [
+      55.0,
+      122.0,
+      545.0,
+      208.0
+    ],
+    "aspect": 5.698
+  },
+  {
+    "file": "t2l/table2_zeroshot_b.pdf",
+    "source": "2506.06105v2.pdf",
+    "page": 6,
+    "rect_points": [
+      55.0,
+      208.0,
+      545.0,
+      314.0
+    ],
+    "aspect": 4.623
+  },
+  {
+    "file": "t2l/table3_scaling.pdf",
+    "source": "2506.06105v2.pdf",
+    "page": 7,
+    "rect_points": [
+      118.0,
+      84.0,
+      480.0,
+      212.0
+    ],
+    "aspect": 2.828
+  },
+  {
+    "file": "gepa/fig1_learning.pdf",
+    "source": "2507.19457v2.pdf",
+    "page": 1,
+    "rect_points": [
+      95.0,
+      458.0,
+      500.0,
+      600.0
+    ],
+    "aspect": 2.852
+  },
+  {
+    "file": "gepa/fig3_pipeline.pdf",
+    "source": "2507.19457v2.pdf",
+    "page": 5,
+    "rect_points": [
+      92.0,
+      95.0,
+      520.0,
+      334.0
+    ],
+    "aspect": 1.791
+  },
+  {
+    "file": "gepa/fig4_algo.pdf",
+    "source": "2507.19457v2.pdf",
+    "page": 6,
+    "rect_points": [
+      92.0,
+      121.0,
+      520.0,
+      382.0
+    ],
+    "aspect": 1.64
+  },
+  {
+    "file": "gepa/fig6_strategy.pdf",
+    "source": "2507.19457v2.pdf",
+    "page": 10,
+    "rect_points": [
+      92.0,
+      300.0,
+      480.0,
+      492.0
+    ],
+    "aspect": 2.021
+  },
+  {
+    "file": "gepa/fig9_merge.pdf",
+    "source": "2507.19457v2.pdf",
+    "page": 24,
+    "rect_points": [
+      92.0,
+      300.0,
+      530.0,
+      520.0
+    ],
+    "aspect": 1.991
+  },
+  {
+    "file": "gepa/fig10_perf.pdf",
+    "source": "2507.19457v2.pdf",
+    "page": 28,
+    "rect_points": [
+      92.0,
+      90.0,
+      500.0,
+      393.0
+    ],
+    "aspect": 1.347
+  },
+  {
+    "file": "gepa/fig16_gap.pdf",
+    "source": "2507.19457v2.pdf",
+    "page": 30,
+    "rect_points": [
+      88.0,
+      88.0,
+      523.0,
+      286.0
+    ],
+    "aspect": 2.197
+  }
+]

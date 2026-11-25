@@ -1,0 +1,271 @@
+%=======================================================================
+%  Chương 4 - Thực nghiệm & kết hợp 2 phương pháp
+%  Mạch chính: 20--22 phút số liệu + 8--10 phút demo.
+%  Run chuẩn: `mistral-7b-v1` (22/11/2026), docs/report/mistral-api-v1/.
+%  Run A (17/11): docs/report/t2l-gepa-comparison.md và docs/report/mistral/.
+%  Số của paper: Bảng 2 của T2L (source/2506.06105v2.pdf, T2L (SFT) L).
+%=======================================================================
+\section{Thực nghiệm \& Kết hợp}
+
+\newcommand{\WayCard}[4]{% #1 colour box, #2 title, #3 how, #4 result
+  \begin{beamercolorbox}[wd=\linewidth,sep=0.55em]{#1}
+    \footnotesize\raggedright
+    \textbf{#2}\par\vspace{0.3em}
+    {\color{Muted}#3}\par\vspace{0.45em}
+    #4
+  \end{beamercolorbox}}
+
+\SectionSlide{4. Thực nghiệm \& Kết hợp}{T2L, GEPA và T2L + GEPA trên Mistral-7B}{%
+  \small
+  \begin{tabular}{@{}l@{\hspace{0.6em}}l@{}}
+    \textbf{\color{Amber}4.1} & \textbf{T2L trên 5 dataset}\\
+    \textbf{\color{Amber}4.2} & \textbf{So sánh T2L và GEPA}\\
+    \textbf{\color{Amber}4.3} & \textbf{Kết hợp T2L + GEPA}\\
+    \textbf{\color{Amber}4.4} & \textbf{Demo}
+  \end{tabular}}
+
+%=======================================================================
+%  4.1  Tái lập T2L
+%=======================================================================
+
+\begin{frame}{4.1\quad Thiết lập thí nghiệm}
+  \footnotesize
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \WayCard{block body}{Cấu hình mặc định}
+        {Mistral-7B-Instruct-v0.2; 5 task lấy từ T2L.}
+        {\scriptsize\begin{itemize}\tightlist
+          \item \textbf{1.000 câu test/task}
+        \end{itemize}}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \WayCard{block body alerted}{Các method so sánh}
+        {Base zero-shot và ICL3}
+        {\scriptsize\begin{itemize}\tightlist
+          \item \textbf{T2L}: LoRA $r{=}8$; đo 0-shot và ICL3
+          \item \textbf{GEPA}: tìm instruction trên base, giữ 3 demos
+          \item \textbf{T2L + GEPA}: tìm instruction khi adapter đang trả lời
+        \end{itemize}}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{4.1\quad So sánh kết quả giữa Paper và của nhóm}{Accuracy \% · 1.000 câu test/task}
+  \centering\scriptsize
+  \renewcommand{\arraystretch}{1.15}
+  \setlength{\tabcolsep}{4.5pt}
+  \begin{tabular}{@{}l rrrrr@{}}
+    \toprule
+    & \multicolumn{2}{c}{\textbf{Paper (Bảng 2)}} & \multicolumn{3}{c}{\textbf{Nhóm tái lập}}\\
+    \cmidrule(r){2-3}\cmidrule(l){4-6}
+    \textbf{Task} & \textbf{base} & \textbf{T2L} & \textbf{base} & \textbf{T2L 0-shot} & \textbf{T2L + ICL3}\\
+    \midrule
+    GSM8K      & 40,9 & 45,8 & 47,8 & 39,1 & 48,4\\
+    ARC-C      & 65,4 & 77,5 & 74,2 & 70,7 & 73,7\\
+    BoolQ      & 71,6 & 85,0 & 82,7 & 85,1 & 86,0\\
+    HellaSwag  & 49,7 & 66,5 & 48,2 & 61,7 & 64,2\\
+    WinoGrande & 45,0 & 64,2 & 59,4 & 28,1 & 64,2\\
+    \midrule
+    \textbf{TB 5 task} & 54,5 & 67,8 & 62,5 & 56,9 & \textbf{67,3}\\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+%=======================================================================
+%  4.2  So sánh T2L và GEPA
+%=======================================================================
+
+\begin{frame}{4.2\quad T2L tạo cải thiện có ý nghĩa trên 3/5 task}
+  \centering\footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{5.5pt}
+  \begin{tabular}{@{}l rrrl@{}}
+    \toprule
+    \textbf{Task} & \textbf{Base} & \textbf{T2L + ICL3} & \textbf{$\Delta$} & \textbf{95\% CI}\\
+    \midrule
+    GSM8K      & 47,8 & 48,4 & +0,6  & \Dim{[$-$2,9; +4,1]}\\
+    ARC-C      & 74,2 & 73,7 & $-$0,5 & \Dim{[$-$3,1; +2,0]}\\
+    BoolQ      & 82,7 & 86,0 & \Win{+3,3} & \Win{[+1,6; +5,1]}\\
+    HellaSwag  & 48,2 & 64,2 & \Win{+16,0} & \Win{[+12,7; +19,4]}\\
+    WinoGrande & 59,4 & 64,2 & \Win{+4,8} & \Win{[+1,5; +8,1]}\\
+    \midrule
+    \textbf{TB} & 62,5 & \textbf{67,3} & \Win{+4,8} & \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.7em}
+  \raggedright\footnotesize
+  T2L + ICL3 cao hơn base về \textbf{điểm quan sát trên 4/5 task}; chỉ BoolQ, HellaSwag và
+  WinoGrande có CI không chứa 0. GSM8K và ARC-C chưa cho thấy khác biệt rõ.
+\end{frame}
+
+\begin{frame}{4.2\quad GEPA chưa vượt baseline ICL3}
+  \centering\footnotesize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}l rr rl@{}}
+    \toprule
+    \textbf{Task} & \textbf{ICL3} & \textbf{GEPA} & \textbf{$\Delta$} & \textbf{Instruction cuối}\\
+    \midrule
+    GSM8K      & 40,2 & 39,8 & $-$0,4 & \Dim{giữ seed}\\
+    ARC-C      & \Best{74,3} & 72,8 & {\color{red!70!black}$-$1,5} & 130 $\rightarrow$ 2.814 ký tự\\
+    BoolQ      & 83,3 & 83,3 & 0,0 & \Dim{giữ seed}\\
+    HellaSwag  & 54,7 & 55,0 & +0,3 & \Dim{giữ seed}\\
+    WinoGrande & 62,3 & 62,2 & $-$0,1 & \Dim{giữ seed}\\
+    \midrule
+    \textbf{TB} & \textbf{63,0} & 62,6 & $-$0,4 & \textbf{4/5 giữ seed}\\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{4.2\quad Chi phí}
+  \centering\scriptsize
+  \renewcommand{\arraystretch}{1.3}
+  \setlength{\tabcolsep}{4.5pt}
+  \begin{tabular}{@{}l rr rr@{}}
+    \toprule
+    & \multicolumn{2}{c}{\textbf{Không search}} & \multicolumn{2}{c}{\textbf{GEPA search}}\\
+    \cmidrule(r){2-3}\cmidrule(l){4-5}
+    \textbf{Chỉ số} & \textbf{ICL3} & \textbf{T2L + ICL3}
+      & \textbf{GEPA base} & \textbf{T2L + GEPA}\\
+    \midrule
+    Search calls       & 0 & 0 & 6.318 & 6.444\\
+    Reflection calls   & 0 & 0 & 53 & 74\\
+    Final-test tokens  & 535.948 & \Best{204.155} & 514.387 & 221.216\\
+    Wall time (giây)   & 782 & \Best{427} & 2.357 & \Best{1.476}\\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+%=======================================================================
+%  4.3  Kết hợp T2L + GEPA
+%=======================================================================
+
+\begin{frame}{4.3\quad Đồng tối ưu: adapter có mặt trong vòng search}{Pipeline \texttt{t2l\_gepa\_opt}}
+  \centering
+  \resizebox{0.97\linewidth}{!}{%
+  \begin{tikzpicture}[font=\scriptsize, >={Stealth[length=1.8mm]},
+      box/.style={draw=Rule, fill=Panel, rounded corners=3pt, align=center,
+                  text width=2.25cm, minimum height=0.8cm, inner sep=0.12cm},
+      key/.style={box, draw=Navy, fill=Navy, text=white},
+      hot/.style={box, draw=Amber, fill=AmberSoft},
+      lab/.style={font=\tiny, text=Muted, inner sep=1.5pt}]
+    \node[key] (hyper) at (0,1.85) {Hypernetwork T2L\\đóng băng};
+    \node[box] (lora)  at (3.2,1.85) {LoRA \texttt{t2l\_<task>}\\14 MB, cố định};
+    \draw[<-, Navy] (hyper.west) -- ++(-0.55,0) node[lab, anchor=east, align=right]{mô tả\\task};
+    \draw[->, Navy] (hyper) -- node[lab, above]{1 lượt} (lora);
+    \node[box] (inst)  at (0,0)   {Instruction\\{\color{Muted}seed = luật task}};
+    \node[hot] (run)   at (3.2,0) {3-shot + item\\$\rightarrow$ \textbf{adapter}};
+    \node[box] (score) at (6.4,0) {Chấm điểm\\+ phản hồi lỗi};
+    \node[key] (refl)  at (4.8,-1.45) {Reflection LM};
+    \node[hot, text width=2.5cm] (test) at (10.0,0) {Instruction tốt nhất\\$\rightarrow$ 1.000 câu test\\(greedy, trên adapter)};
+    \draw[->, Navy] (inst) -- (run);
+    \draw[->, Navy] (run) -- (score);
+    \draw[->, Navy] (score.south) |- (refl.east);
+    \draw[->, Navy] (refl.west) -| node[lab, pos=0.3, below]{instruction mới (lọc Pareto)} (inst.south);
+    \draw[->, Amber!80!black, dashed] (lora) -- (run);
+    \draw[->, Navy, thick] (score) -- node[lab, above]{hết ngân sách} (test);
+    \begin{scope}[on background layer]
+      \node[draw=Rule, dashed, rounded corners=4pt, inner sep=0.18cm,
+            fit=(inst)(run)(score)(refl), label={[lab, anchor=south west]north west:Vòng GEPA: ngân sách 1.500 metric call/task}] {};
+    \end{scope}
+  \end{tikzpicture}}
+
+  \vspace{0.4em}
+  \scriptsize
+  Reflection: \texttt{deepseek-v4.1-flash}
+\end{frame}
+
+\begin{frame}{4.3\quad Kết quả kết hợp T2L + GEPA}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.58\textwidth}
+      \centering\scriptsize
+      \renewcommand{\arraystretch}{1.25}
+      \setlength{\tabcolsep}{3.5pt}
+      \begin{tabular}{@{}l r r r l@{}}
+        \toprule
+        \textbf{Task} & \textbf{T2L} & \textbf{+GEPA} & \textbf{$\Delta$} & \textbf{95\% CI}\\
+        \midrule
+        GSM8K      & 48,4 & 48,0 & $-$0,4 & \Dim{[$-$1,6; +0,8]}\\
+        ARC-C      & 73,7 & 74,3 & +0,6   & \Dim{[$-$1,6; +2,8]}\\
+        BoolQ      & 86,0 & 85,2 & $-$0,8 & \Dim{[$-$2,3; +0,7]}\\
+        HellaSwag  & 64,2 & 64,7 & +0,5   & \Dim{[$-$1,5; +2,5]}\\
+        WinoGrande & 64,2 & 64,7 & +0,5   & \Dim{[$-$0,1; +1,1]}\\
+        \midrule
+        \textbf{TB} & 67,3 & 67,4 & \textbf{+0,1} & \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \WayCard{block body alerted}{Đọc kết quả}
+        {T2L trong bảng là T2L + ICL3.}
+        {
+         \textbf{T2L + GEPA} giữ nguyên seed ở \textbf{2/5 task}: GSM8K và WinoGrande.}
+    \end{column}
+  \end{columns}
+  \vspace{0.4em}
+  \centering\footnotesize
+  Co-optimisation khớp hoặc nhỉnh hơn T2L một chút, nhưng \textbf{chưa đủ bằng chứng}
+  rằng prompt search tạo thêm lợi ích.
+\end{frame}
+
+% --- APPENDIX ---
+\begin{frame}{Kết quả đầy đủ}
+  \centering\scriptsize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{@{}l r r r r r r@{}}
+    \toprule
+    \textbf{Task} & \textbf{base} & \textbf{3-shot} & \textbf{T2L} & \textbf{T2L} & \textbf{GEPA} & \textbf{T2L + GEPA}\\
+                  &               &                 & \Dim{0-shot} & \Dim{+ ICL3} & \Dim{trên base} & \Dim{đồng tối ưu}\\
+    \midrule
+    GSM8K         & 47,8 & 40,2 & 39,1 & \Best{48,4} & 39,8 & 48,0\\
+    ARC-C         & 74,2 & \Best{74,3} & 70,7 & 73,7 & 72,8 & \Best{74,3}\\
+    BoolQ         & 82,7 & 83,3 & 85,1 & \Best{86,0} & 83,3 & 85,2\\
+    HellaSwag     & 48,2 & 54,7 & 61,7 & 64,2 & 55,0 & \Best{64,7}\\
+    WinoGrande    & 59,4 & 62,3 & 28,1 & 64,2 & 62,2 & \Best{64,7}\\
+    \midrule
+    \textbf{TB}   & 62,5 & 63,0 & 56,9 & 67,3 & 62,6 & \Best{67,4}\\
+    \textbf{$\Delta$ so với base} & & +0,5 & $-$5,5 & \Win{+4,8} & +0,2 & \Win{+4,9}\\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Cấu hình GEPA}
+  \centering\footnotesize
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{@{}>{\bfseries}l>{\raggedright\arraybackslash}p{0.72\linewidth}@{}}
+    \toprule
+    Ngân sách       & 1.500 metric call/task: 300 để chấm tập chọn, 1.200 để tìm kiếm\\
+    Dữ liệu         & $D_{\text{train}}$ 150 câu, $D_{\text{pareto}}$ 300 câu\\
+    Rollout         & temperature $T{=}0{,}6$\\
+    Reflection LM   & \texttt{deepseek-v4.1-flash}\\
+    Phản hồi        & đúng/sai + câu trả lời của model + đáp án đúng + lời giải tham khảo\\
+    \bottomrule
+  \end{tabular}
+\end{frame}
+
+%=======================================================================
+%  4.4  Demo
+%=======================================================================
+
+\begin{frame}{4.4\quad Demo}{\href{https://cs222.lethienquan.site}{cs222.lethienquan.site}}
+\end{frame}
+
+% --- CLOSING ---
+\begin{frame}[plain,c]
+  \centering
+  \vspace{1.2em}
+  {\Huge \bfseries Cảm ơn thầy cô và các bạn đã lắng nghe!}
+
+  \vspace{0.8em}
+  {\large \color{gray} Rất mong nhận được câu hỏi và góp ý thảo luận từ mọi người.}
+
+  \vspace{1.8em}
+  \rule{0.45\linewidth}{0.5pt}
+
+  \vspace{1em}
+  {\small \textbf{CS222 -- Seminar: Prompting and PEFT -- Nhóm 5}} \\
+  \vspace{0.3em}
+  {\footnotesize Demo: \texttt{cs222.lethienquan.site}}
+\end{frame}

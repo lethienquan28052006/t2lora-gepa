@@ -1,0 +1,52 @@
+% ------------------------------------------------------------------ 1
+{\setbeamertemplate{footline}{}
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture, overlay]
+    \fill[Navy] (current page.north west) rectangle ([yshift=-0.60\paperheight]current page.north east);
+    \fill[Amber] ([yshift=-0.60\paperheight]current page.north west) rectangle ([yshift=-0.61\paperheight]current page.north east);
+    \node[anchor=north west] (logo) at ([xshift=0.7cm, yshift=-0.4cm]current page.north west)
+      {\includegraphics[height=0.8cm]{figure/deck/uit_logo}};
+    \node[anchor=west, text=white!88, align=left, font=\scriptsize\bfseries] at ([xshift=0.2cm]logo.east) {%
+      ĐẠI HỌC QUỐC GIA TP. HỒ CHÍ MINH\\[0.1em]
+      TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN};
+    \node[anchor=west, text=white, align=left, font=\Huge\bfseries]
+      at ([xshift=0.7cm, yshift=1.05cm]current page.west) {PROMPTING \& PEFT};
+    \node[anchor=west, text=Amber, align=left, font=\Large\bfseries]
+      at ([xshift=0.7cm, yshift=0.15cm]current page.west) {PHẦN ỨNG DỤNG};
+    \node[anchor=east, text=white!85, align=right, font=\small]
+      at ([xshift=-0.7cm, yshift=0.15cm]current page.east)
+      {Xử lý ngôn ngữ tự nhiên Nâng cao\\[0.15em]\textbf{CS222}};
+  \end{tikzpicture}
+
+  \vspace{0.62\textheight}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.3\textwidth}
+      {\color{Muted}\scriptsize GIẢNG VIÊN HƯỚNG DẪN}\\[0.2em]
+      {\bfseries TS. Nguyễn Thị Quý}
+    \end{column}
+    \begin{column}{0.68\textwidth}
+      \raggedleft
+      {\color{Muted}\scriptsize NHÓM 5}\\[0.2em]
+      {\bfseries Bùi Huỳnh Tây \,--\, Lê Thiên Quân \,--\, Đoàn Hồng Bảo}
+    \end{column}
+  \end{columns}
+\end{frame}}
+
+% ------------------------------------------------------------------ 2
+\begin{frame}{Nội dung}
+  \vspace{0.6em}
+  \centering
+  \begin{tikzpicture}[font=\normalsize,
+      num/.style={circle, fill=Navy, text=white, font=\bfseries, minimum size=0.75cm, inner sep=0pt},
+      row/.style={fill=Panel, rounded corners=3pt, minimum height=0.75cm, text width=10.3cm,
+                  align=left, inner xsep=0.5cm, anchor=west}]
+    \foreach \i/\t [count=\k] in {
+        1/Bài toán Downstream Task,
+        2/{Prompting: \textbf{GEPA} --- ICLR 2026},
+        3/{PEFT: \textbf{Text-to-Lora} --- ICML 2025},
+        4/Quy trình Thực nghiệm \& Kết hợp 2 phương pháp.} {
+      \node[row] (r\k) at (0.25, -\k*1.05) {\t};
+      \node[num] at (0, -\k*1.05) {\i};
+    }
+  \end{tikzpicture}
+\end{frame}
