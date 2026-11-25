@@ -1,6 +1,6 @@
 # CS222 — Beamer deck (Prompting & PEFT)
 
-Bản Beamer của `source/slide-cs222.pptx.pdf`: **toàn bộ 55 slide gốc giữ nguyên thứ tự và câu chữ**, tiếp theo là chương 4 gồm **11 slide nội dung chính + 1 slide demo + 4 slide appendix**
+Bản Beamer của `source/slide-cs222.pptx.pdf`: **toàn bộ 55 slide gốc giữ nguyên thứ tự và câu chữ**, tiếp theo là chương 4 gồm **9 slide nội dung chính + 1 slide demo + 1 slide cảm ơn**
 (kể cả các lỗi chính tả như "Downsteam", "Adaption" ở phần gốc), chỉ đổi cách trình bày.
 Chương 4 dành khoảng 20–22 phút cho số liệu và 8–10 phút cho demo. Các slide gốc chỉ có hình thì ở đây có tiêu đề + caption ghi nguồn hình.
 
@@ -14,7 +14,7 @@ parts/
   02_gepa.tex         slide 16–41 (2. GEPA)
   03_t2l.tex          slide 42–63 (3. Text-to-LoRA)
   04_cost.tex         slide 64    (Chi phí và hạn chế)
-  05_experiments.tex  chương 4: slide 65–81 (phân tích, demo và 4 appendix Q&A)
+  05_experiments.tex  chương 4: slide 65–76 (phân tích, demo và 4 appendix Q&A)
   06_references.tex   rỗng — deck gốc không có slide tài liệu tham khảo
 figure/deck/          ảnh lấy nguyên từ slide gốc (pdfimages + cắt viền trắng)
 figure/t2l, gepa/     hình và bảng tách từ paper (vector, không phải ảnh chụp)
@@ -39,7 +39,7 @@ Không dùng screenshot giả. Fallback:
 - Prompt history và kết quả per-item: `/data/quan.lt/temp/t2l-mistral/artifacts/mistral-7b-v1/`.
 - Cách chạy local và endpoint: xem `docs/demo.md`.
 
-`main_uit.pdf` hiện có 81 trang; `main.pdf` cũ không phải bản master.
+`main_uit.pdf` hiện có 76 trang; `main.pdf` cũ không phải bản master.
 
 ## Biên dịch
 

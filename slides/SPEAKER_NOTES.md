@@ -1,6 +1,6 @@
 # Speaker notes — Prompting & PEFT
 
-Tài liệu này khớp với `slides/main_uit.pdf` hiện tại: **81 trang**, chương 4 ở trang 65–81.
+Tài liệu này khớp với `slides/main_uit.pdf` hiện tại: **76 trang**, chương 4 ở trang 65–76.
 Mỗi mục tương ứng một trang PDF. Thời lượng là gợi ý cho một buổi seminar khoảng 80–85 phút.
 
 **Cách dùng nhanh**
@@ -18,8 +18,8 @@ Mỗi mục tương ứng một trang PDF. Thời lượng là gợi ý cho mộ
 | Chương 1 — Bài toán DTA | 3–15 | 12–14 phút |
 | Chương 2 — GEPA | 16–41 | 20–22 phút |
 | Chương 3 — Text-to-LoRA | 42–64 | 16–18 phút |
-| Chương 4 — Thực nghiệm, kết hợp và demo | 65–81 | 30 phút |
-| **Tổng** | **81** | **80–86 phút** |
+| Chương 4 — Thực nghiệm, kết hợp và demo | 65–76 | 30 phút |
+| **Tổng** | **76** | **80–86 phút** |
 
 Nếu thiếu thời gian, giữ nguyên chương 4; rút gọn các slide công trình liên quan ở chương 2 và phần module kỹ thuật ở chương 3.
 
@@ -553,152 +553,106 @@ Nếu thiếu thời gian, giữ nguyên chương 4; rút gọn các slide công
 
 ### Trang 65 — Divider chương 4 · 15 giây
 
-**Lời nói:** Chương 4 là phần nhóm tự chạy. Mục tiêu không phải tái lập mọi con số của paper, mà kiểm tra ba câu hỏi: T2L mạnh đến đâu, GEPA thêm được gì, và ghép hai phương pháp có tạo synergy thật không. Nhóm dùng Mistral-7B-Instruct-v0.2, năm benchmark, mỗi task 1.000 câu test.
+**Lời nói:** Chương 4 là phần nhóm tự chạy. Mục tiêu là kiểm tra T2L mạnh đến đâu, GEPA thêm được gì, và ghép hai phương pháp có tạo synergy thật không. Nhóm dùng Mistral-7B-Instruct-v0.2, năm benchmark, mỗi task 1.000 câu test.
 
 **Nhấn:** Khoảng 20–22 phút số liệu, 8–10 phút demo.
 
-**Chuyển:** “Bắt đầu bằng thiết lập để mọi so sánh có cùng gốc.”
+**Chuyển:** “Bắt đầu bằng thiết lập chung.”
 
-### Trang 66 — Thiết lập thí nghiệm · 80–90 giây
+### Trang 66 — Thiết lập thí nghiệm · 60–70 giây
 
-**Lời nói:** Mọi phiên bản dùng cùng mô hình, cùng 1.000 câu test mỗi task, cùng chat template, cùng answer extractor và greedy khi chấm điểm cuối. Split được khử trùng lặp và có guard chặn câu test lọt vào tối ưu. Các bề mặt so sánh gồm base và ICL3 làm control; T2L sinh LoRA 14 MB; GEPA tìm instruction trên base; T2L+GEPA tìm instruction khi adapter đang trả lời. Rollout search dùng temperature 0,6; chỉ số báo cáo mới greedy.
+**Lời nói:** Mọi phương pháp dùng cùng Mistral-7B-Instruct-v0.2 và cùng năm task lấy từ T2L, mỗi task 1.000 câu test. Base zero-shot và ICL3 là hai control. T2L thay trọng số bằng LoRA `r=8` và được đo ở cả 0-shot lẫn ICL3. GEPA giữ base, tìm instruction và giữ ba demonstrations. T2L + GEPA tìm instruction khi adapter đang trả lời.
 
-**Nhấn:** Cùng harness, chỉ đổi bề mặt thích nghi. CI dùng paired bootstrap trên cùng item ID.
+**Nhấn:** Cùng model và cùng bộ test; điểm khác nhau nằm ở bề mặt thích nghi.
 
-**Chuyển:** “Trước tiên xem T2L có tái lập được paper không.”
+**Chuyển:** “Trước khi đọc kết quả, bảng này đặt số của paper cạnh số nhóm chạy lại.”
 
-### Trang 67 — Paper và nhóm: tái lập một phần · 100–110 giây
+### Trang 67 — So sánh kết quả Paper và nhóm · 100–110 giây
 
-**Lời nói:** Bảng so hai cấu hình zero-shot. Cột base cho thấy harness của nhóm dễ hơn paper trên ba task nhỏ: ARC-C, BoolQ, WinoGrande cao hơn đáng kể, nên headroom còn ít. Về delta T2L zero-shot, HellaSwag tái lập gần: +13,5 so với +16,8. Các task khác không tái lập mức tăng; WinoGrande thậm chí rất tệ vì lỗi định dạng. Vì vậy nhóm kết luận tái lập một phần, không nói tái lập toàn bộ. Cột T2L+ICL3 ở cuối là kết quả ứng dụng bổ sung, không phải cùng cấu hình paper.
+**Lời nói:** Bảng giữ accuracy thô, không quy về chênh lệch. Với T2L 0-shot, paper có 45,8 GSM8K; 77,5 ARC-C; 85,0 BoolQ; 66,5 HellaSwag; 64,2 WinoGrande. Nhóm đo được 39,1; 70,7; 85,1; 61,7 và 28,1. HellaSwag sát paper nhất, 61,7 so với 66,5. WinoGrande zero-shot chỉ 28,1 vì adapter trả sai format; khi thêm ba demonstrations lên 64,2. Cột T2L+ICL3 là cấu hình bổ sung, không cùng thiết lập paper. Base nhóm cao hơn paper trên ba task do harness, prompt và extractor khác; không nên nói mô hình nhóm mạnh hơn.
 
-**Nhấn:** Paper dùng 3 adapter/task, nhóm dùng 1; harness dễ hơn 8–14 pp trên ba task. Không so tuyệt đối với paper.
+**Nhấn:** Paper dùng 3 adapters/task, nhóm dùng 1; chỉ đối chiếu xu hướng, không so tuyệt đối.
 
-**Chuyển:** “WinoGrande là case rõ nhất cho việc format quan trọng thế nào.”
+**Chuyển:** “Trong cùng harness của nhóm, T2L+ICL3 cải thiện những task nào có ý nghĩa?”
 
-### Trang 68 — WinoGrande: 3-shot sửa lỗi định dạng · 100–110 giây
+### Trang 68 — T2L tạo cải thiện có ý nghĩa trên 3/5 task · 100–110 giây
 
-**Lời nói:** Trên Run A, cùng một adapter nhưng zero-shot chỉ đạt 27,9%, trong khi thêm 3 demonstrations lên 64,6%. Điều đáng chú ý là tỷ lệ output không trích được đáp án giảm từ 59,6% xuống 8,8%. Adapter trả tên thực thể kiểu “Sarah” thay vì “The answer is (A)”; extractor không tìm thấy lựa chọn. Vì vậy phần lớn mức tăng không phải năng lực mới, mà là dạy lại quy ước trả lời. Đây là lý do headline của nhóm dùng T2L+ICL3 và T2L zero-shot chỉ là control phân tích lỗi.
-
-**Nhấn:** 27,9→64,6; lỗi trích xuất 59,6→8,8%. Đây là Run A, không trộn với run chuẩn.
-
-**Chuyển:** “Với cấu hình có 3-shot, T2L cải thiện những task nào có ý nghĩa?”
-
-### Trang 69 — T2L tạo cải thiện có ý nghĩa trên 3/5 task · 100–110 giây
-
-**Lời nói:** So T2L+ICL3 với base: BoolQ +3,3 điểm phần trăm, HellaSwag +16,0, WinoGrande +4,8; cả ba CI đều không chứa 0. GSM8K +0,6 và ARC-C −0,5 có CI chứa 0, nên chưa kết luận. T2L có điểm quan sát cao nhất trên 4/5 task, nhưng chỉ 3/5 task có cải thiện có ý nghĩa thống kê. Con số mean +4,8 là trung bình của năm task, không phải mức tăng đồng đều.
+**Lời nói:** So T2L+ICL3 với base, BoolQ tăng 3,3 điểm, HellaSwag tăng 16,0 và WinoGrande tăng 4,8; cả ba CI không chứa 0. GSM8K tăng 0,6 và ARC-C giảm 0,5 nhưng CI chứa 0, nên chưa kết luận. T2L có điểm quan sát cao nhất trên 4/5 task, nhưng chỉ 3/5 task có cải thiện có ý nghĩa thống kê. Mean +4,8 là trung bình năm task, không phải mức tăng đồng đều.
 
 **Nhấn:** Phân biệt “cao nhất trên 4/5” và “có ý nghĩa trên 3/5”.
 
-**Chuyển:** “GEPA trên cùng base model có vượt baseline 3-shot không?”
+**Chuyển:** “GEPA được so với baseline công bằng nhất: ICL3.”
 
-### Trang 70 — GEPA chưa vượt baseline ICL3 · 100–110 giây
+### Trang 69 — GEPA chưa vượt baseline ICL3 · 100–110 giây
 
-**Lời nói:** So công bằng là GEPA với ICL3 vì cùng base và cùng ba demonstrations. GEPA đạt 62,6 trung bình, thấp hơn ICL3 0,4 điểm. GEPA giữ nguyên seed ở 4/5 task; task duy nhất instruction thay đổi là ARC-C, nhưng lại giảm 1,5 điểm. Ở các task giữ seed, chênh lệch nhỏ vẫn xuất hiện do serving không hoàn toàn deterministic. Vì vậy trong run này, search chưa tạo được cải thiện rõ trên baseline 3-shot.
+**Lời nói:** GEPA và ICL3 cùng base, cùng ba demonstrations. GEPA đạt 62,6 trung bình, thấp hơn ICL3 0,4 điểm. GEPA giữ nguyên seed ở 4/5 task; task duy nhất instruction thay đổi là ARC-C, nhưng accuracy lại giảm 1,5 điểm. Các task còn lại gần như trùng baseline, nên lợi ích chủ yếu đến từ demonstrations chứ không từ instruction search.
 
-**Nhấn:** 4/5 giữ seed; task duy nhất đổi prompt lại giảm 1,5 pp.
+**Nhấn:** 4/5 giữ seed; task duy nhất đổi prompt lại giảm 1,5 điểm.
 
-**Chuyển:** “Nếu adapter trả lời ngắn hơn, chi phí thay đổi ra sao?”
+**Chuyển:** “Chi phí cho thấy cùng một ngân sách search nhưng thời gian khác nhau.”
 
-### Trang 71 — Chi phí thích nghi và suy luận · 90–100 giây
+### Trang 70 — Chi phí · 80–90 giây
 
-**Lời nói:** Ở final test, T2L+ICL3 sinh 204.155 token so với 535.948 của ICL3, tức ít hơn khoảng 2,6 lần, và wall time 427 so với 782 giây. Với search, số search calls gần như nhau: 6.444 so với 6.318, nhưng T2L+GEPA chỉ mất 1.476 giây so với 2.357 giây trên base, nhanh hơn khoảng 1,6 lần và giảm 37% wall time. Lý do là adapter viết câu trả lời ngắn hơn nên mỗi rollout rẻ hơn.
+**Lời nói:** Bảng so bốn arm trên tổng năm task. Hai arm không search có 0 search call. GEPA trên base và T2L+GEPA có số search call gần như nhau, nhưng final-test token và wall time khác. Adapter trả lời ngắn hơn nên search trên adapter ít tốn token hơn. Khi đọc bảng, nhớ wall time gồm search + final test, còn token chỉ tính final test; token trong search không được meter.
 
-**Nhấn:** Cùng ngân sách search, adapter làm search nhanh hơn vì sinh ít token hơn.
+**Nhấn:** So sánh phải tách “chi phí tìm prompt” khỏi “chi phí chạy test”.
 
-**Chuyển:** “Vậy ghép prompt và adapter theo cách nào?”
+**Chuyển:** “Pipeline dưới đây giải thích vì sao T2L+GEPA lại chạy rollout trên adapter.”
 
-### Trang 72 — Ba cách kết hợp đã thử · 100–110 giây
+### Trang 71 — Pipeline đồng tối ưu · 60–70 giây
 
-**Lời nói:** Cách một là chuyển prompt GEPA của base sang adapter, không search thêm. Trên Run A, GSM8K giảm 4,2 và WinoGrande giảm 6,0; gain trung bình so với base rơi từ +5,4 xuống +3,5; lỗi không trích được trên WinoGrande tăng 8,8 lên 12,4%, vì prompt tối ưu cho base xung đột với kiểu trả lời của adapter. Cách hai là search mô tả task: WinoGrande thử 10 candidates nhưng tốt nhất 63,2 so với 64,6; GSM8K một candidate 48,0 so với 49,7; selection set 120 câu có nhiễu ±4 điểm, còn pipeline floor riêng khoảng 1,4 điểm. Cách ba là giữ adapter cố định và cho GEPA search instruction với adapter trong vòng lặp.
+**Lời nói:** Adapter được sinh một lần từ mô tả gốc rồi đóng băng. GEPA chỉ sửa instruction. Mọi rollout chạy trên t2l_<task>, reflection đọc lỗi của chính mô hình đã adapt, rồi đề xuất instruction mới. Ngân sách 1.500 metric call mỗi task; instruction tốt nhất mới được chạy greedy trên 1.000 câu test. Điểm khác biệt so với GEPA trên base là nơi rollout chạy, không phải thuật toán.
 
-**Nhấn:** Prompt transfer tối ưu sai failure mode; description search chưa vượt seed và có hai nguồn nhiễu khác nhau.
+**Nhấn:** Adapter cố định, instruction thay đổi, reflection thấy failure mode của model đã adapt.
 
-**Chuyển:** “Cách thứ ba được triển khai trong pipeline sau.”
+**Chuyển:** “Kết quả của cách ghép này rất khiêm tốn.”
 
-### Trang 73 — Pipeline đồng tối ưu · 60–70 giây
+### Trang 72 — Kết quả kết hợp T2L + GEPA · 90–100 giây
 
-**Lời nói:** Adapter được sinh một lần từ mô tả gốc rồi đóng băng. GEPA chỉ sửa instruction. Mọi rollout chạy trên t2l_<task>, reflection đọc lỗi của chính mô hình đã adapt, rồi đề xuất instruction mới. Ngân sách 1.500 metric call mỗi task, D_train 150, D_pareto 300, ba demonstrations cố định, rollout temperature 0,6. Instruction tốt nhất mới được chạy greedy trên 1.000 câu test.
+**Lời nói:** So T2L+GEPA với T2L+ICL3, trung bình tăng 0,1 điểm. Không task nào có CI loại 0; delta từng task nằm trong khoảng −0,8 đến +0,6. T2L+GEPA giữ nguyên seed ở 2/5 task là GSM8K và WinoGrande. Toàn bộ mức tăng so với base chủ yếu đến từ adapter và demos, không phải từ prompt search. Vì vậy không nên nói đồng tối ưu tạo ra bước nhảy mới.
 
-**Nhấn:** Khác biệt duy nhất so với GEPA trên base là model name trong mọi rollout.
+**Nhấn:** +0,1 pp trung bình; 0/5 task có ý nghĩa; seed giữ nguyên ở 2/5.
 
-**Chuyển:** “Kết quả của cách ghép này có xứng với chi phí không?”
+**Chuyển:** “Bảng tổng hợp đặt tất cả phiên bản cạnh nhau.”
 
-### Trang 74 — Kết quả đồng tối ưu: +0,1 pp · 90–100 giây
+### Trang 73 — Kết quả đầy đủ · 45–55 giây
 
-**Lời nói:** So T2L+GEPA với T2L+ICL3 trên cùng câu test, trung bình tăng 0,1 điểm: 67,4 so với 67,3. Không task nào có CI loại 0; delta từng task nằm trong khoảng −0,8 đến +0,6. T2L+GEPA giữ nguyên seed ở 2/5 task là GSM8K và WinoGrande. Toàn bộ mức tăng +4,9 so với base chủ yếu đến từ adapter và demos, không phải từ prompt search. Vì vậy không nên nói đồng tối ưu tạo ra bước nhảy mới.
+**Lời nói:** Bảng giữ sáu phiên bản để tra cứu. Điểm cần nhớ không phải từng ô, mà là T2L+ICL3 và T2L+GEPA gần như trùng nhau; GEPA trên base không vượt 3-shot. T2L zero-shot rất thấp trên WinoGrande vì lỗi format; khi thêm demos mới trở lại bình thường. Các ô in đậm là best theo điểm quan sát, không hàm ý khác biệt có ý nghĩa.
 
-**Nhấn:** +0,1 pp; 0/5 task có ý nghĩa; seed giữ nguyên ở 2/5.
+**Nhấn:** T2L làm phần lớn; GEPA thêm rất ít; GEPA trên base không vượt 3-shot.
 
-**Chuyển:** “Nhưng nếu chạy lại toàn bộ protocol thì con số này có giữ được không?”
+**Chuyển:** “Cấu hình GEPA tóm tắt những gì đã chạy phía sau.”
 
-### Trang 75 — Dao động nằm ở quá trình tìm kiếm · 100–110 giây
+### Trang 74 — Cấu hình GEPA · 45–55 giây
 
-**Lời nói:** So Run A ngày 17/11 với run chuẩn 22/11. Các phiên bản cố định lệch không quá 0,3 điểm, nhưng GEPA lệch −1,5 và T2L+GEPA lệch −1,3. Cụ thể GEPA trên GSM8K từ 45,4 xuống 39,8; T2L+GEPA trên WinoGrande từ 67,8 xuống 64,7; lợi thế của combination so với T2L từ +1,1 xuống +0,1. Prompt của T2L+GEPA ở run chuẩn dài từ 60–130 lên 1.768–2.963 ký tự nhưng không task nào có gain có ý nghĩa. Kết luận: biến động nằm ở search, không ở đánh giá; CI trên câu test không bao phủ biến động này.
+**Lời nói:** Mỗi task có ngân sách 1.500 metric call: 300 để chấm tập chọn và 1.200 để tìm kiếm. D_train có 150 câu, D_pareto có 300 câu. Rollout dùng temperature 0,6. Reflection LM là deepseek-v4.1-flash, nhận output, đáp án đúng, đúng/sai và lời giải tham khảo.
 
-**Nhấn:** Dao động search 1,3–1,5 pp; cần nhiều seed, không chỉ tăng budget.
+**Nhấn:** GEPA chỉ sửa instruction; trọng số và demonstrations không đổi.
 
-**Chuyển:** “Ba con số đủ để chốt phần thực nghiệm.”
+**Chuyển:** “Phần cuối là demo trực tiếp.”
 
-### Trang 76 — Ba con số để kết luận · 55–65 giây
+### Trang 75 — Demo · 8–10 phút
 
-**Lời nói:** Thứ nhất, T2L+ICL3 tăng +4,8 điểm ở run chuẩn, +5,4 ở Run A, với 3/5 task có ý nghĩa; artifact chỉ 14 MB. Thứ hai, GEPA thêm +0,1 ở run chuẩn và +1,1 ở Run A, nhưng 0/5 task có ý nghĩa ở run chuẩn, nên chưa thể khẳng định synergy. Thứ ba, các phiên bản search dao động 1,3–1,5 điểm giữa hai lần chạy, trong khi phiên bản cố định chỉ 0,3. Bài học: adapter tạo phần cải thiện rõ và rẻ; đồng tối ưu hợp lý về thiết kế nhưng cần nhiều seed trước khi tuyên bố lợi ích.
+**Lời nói:** Chạy cùng một câu WinoGrande qua Base, T2L, GEPA và T2L+GEPA; đối chiếu output, đáp án trích được, latency và token. Sau đó mở prompt history để kiểm tra seed, candidates và best. Nếu dịch vụ lỗi, dùng prompt/per-item đã lưu trong artifact bundle; không dựng kết quả giả.
 
-**Nhấn:** +4,8 — +0,1 — 1,3–1,5.
+**Fallback:** `docs/demo.md` và `/data/quan.lt/temp/t2l-mistral/artifacts/mistral-7b-v1/`.
 
-**Chuyển:** “Phần cuối là demo để kiểm tra trực tiếp các nhận định này.”
+**Nhấn:** Demo dùng generation thật, không mô phỏng search.
 
-### Trang 77 — Demo AdaptLab · 8–10 phút
+**Chuyển:** “Nhóm em xin kết thúc và nhận câu hỏi.”
 
-**Lời nói:** Demo có hai phần. Phần live playground khoảng 5–6 phút: chọn một câu WinoGrande, chạy cùng câu đó qua Base, T2L, GEPA và T2L+GEPA, rồi đối chiếu raw output, đáp án trích được, đúng/sai, latency và token. Sau đó mở exact prompt để chỉ ra demonstrations, instruction và adapter. Phần prompt optimization khoảng 3–4 phút: mở seed, candidates, best của WinoGrande và ARC-C để kiểm tra trực tiếp hai nhận định “giữ seed” và “prompt dài hơn”.
+### Trang 76 — Cảm ơn · 20–30 giây
 
-**Kịch bản thao tác:**
+**Lời nói:** Nhóm em xin cảm ơn thầy cô và các bạn. Tóm tắt một câu: T2L tạo phần cải thiện rõ và rẻ; GEPA trên base không vượt 3-shot; đồng tối ưu đúng về thiết kế nhưng lợi ích thêm hiện rất nhỏ và chưa đủ bằng chứng. Nhóm sẵn sàng nhận câu hỏi.
 
-1. Vào Live playground, chọn WinoGrande, bấm lấy câu ngẫu nhiên.
-2. Chạy bốn phiên bản; chỉ vào câu trả lời zero-shot thiếu format nếu gặp.
-3. Mở prompt đầy đủ; chỉ ba demonstrations và instruction.
-4. Chuyển sang Prompt optimization, chọn T2L+GEPA/WinoGrande: seed = best.
-5. Chọn T2L+GEPA/ARC-C: seed ngắn, best dài hơn.
-6. Chốt: demo đọc artifacts thật, không mô phỏng search.
-
-**Fallback:** Dịch vụ công khai từng trả HTTP 502 khi kiểm tra ngày 24/11. Nếu lỗi khi trình bày, không dựng kết quả giả; mở prompt history và per-item trong `/data/quan.lt/temp/t2l-mistral/artifacts/mistral-7b-v1/`, hoặc chạy local theo `docs/demo.md`. Nếu không kịp chạy local, dùng chính các bảng đã lưu để tiếp tục phần Q&A.
-
-**Nhấn:** Demo phải chứng minh hai điều: T2L trả lời khác base thế nào, và GEPA đã/không sửa prompt ra sao.
-
-**Chuyển:** “Nếu còn thời gian, appendix giữ các bảng đầy đủ để trả lời câu hỏi.”
-
-### Trang 78 — Phụ lục A: kết quả đầy đủ · 20–30 giây
-
-**Nói khi được hỏi:** Bảng này giữ cả sáu phiên bản để tra cứu. Điểm cần nhớ là T2L zero-shot rất thấp trên WinoGrande do format; khi thêm 3-shot mới lên 64,2. Các ô in đậm là best theo điểm quan sát, không hàm ý khác biệt có ý nghĩa. Nếu ai hỏi sao T2L+GEPA 64,7 hơn 64,2 mà không kết luận, trả lời: CI chứa 0.
-
-**Chuyển:** “Protocol chi tiết ở trang sau.”
-
-### Trang 79 — Phụ lục B: protocol GEPA · 25–35 giây
-
-**Nói khi được hỏi:** Ngân sách 1.500 metric call/task, 300 cho selection và 1.200 cho search; D_train 150, D_pareto 300; rollout T=0,6 top-p0,95 tối đa512 token; reflection model deepseek-v4.1-flash, không phải GPT-4.1-mini như paper. Đây là khác biệt cần nêu khi so trực tiếp với paper.
-
-**Chuyển:** “Các bug đã sửa là phần kiểm chứng độ tin cậy.”
-
-### Trang 80 — Phụ lục C: kiểm chứng harness · 30–40 giây
-
-**Nói khi được hỏi:** Nhóm phát hiện và sửa nhiều lỗi làm invalid kết quả cũ. BoolQ từng không render passage; sau khi sửa, Gemma base 56,1% còn Mistral base 82,4% — đây là hai model khác nhau, không phải before/after cùng model. GEPA từng không thấy options ở HellaSwag; seed tăng 26,7 lên 55,7 sau khi sửa. Seed từng bị dùng nhầm GSM8K cho mọi task. Mỗi lỗi hiện có regression test.
-
-**Nhấn:** Không giấu lỗi; các số cũ bị invalid đã bị loại, không báo cáo.
-
-**Chuyển:** “Trang cuối là các giới hạn khi diễn giải.”
-
-### Trang 81 — Phụ lục D: giới hạn · 25–35 giây
-
-**Nói khi được hỏi:** Nhóm dùng một adapter/task, paper trung bình ba; một search trajectory mỗi arm; harness dễ hơn lm-eval nên base cao hơn paper 8–14 điểm trên ba task; reflection model khác paper. Description search chỉ dùng 120 câu chọn, nhiễu ±4 điểm, cộng pipeline floor 1,4 điểm, nên không đủ sức xác nhận cải thiện nhỏ. Vì vậy mọi kết luận chỉ so trong cùng harness, không so tuyệt đối với paper.
-
-**Nhấn:** CI trên câu test không thay thế được nhiều lần search.
-
-**Chuyển:** “Nhóm em sẵn sàng nhận câu hỏi.”
+**Chuyển:** Mở Q&A.
 
 ---
 
-# Q&A nhanh
 
-Dùng các câu trả lời ngắn dưới đây khi bị hỏi; số liệu chi tiết mở appendix tương ứng.
+
+Dùng các câu trả lời ngắn dưới đây khi bị hỏi; số liệu chi tiết mở bảng tổng hợp
+ở trang 73 hoặc report trong `docs/report/mistral-api-v1/`.
 
 1. **Vì sao không so tuyệt đối với paper?**
    Harness của nhóm dễ hơn lm-eval: base Mistral cao hơn paper 8–14 điểm trên ARC-C, BoolQ, WinoGrande. Chỉ delta trong cùng harness mới có nghĩa.

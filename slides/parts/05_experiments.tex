@@ -21,30 +21,28 @@
     \textbf{\color{Amber}4.1} & \textbf{T2L trên 5 dataset}\\
     \textbf{\color{Amber}4.2} & \textbf{So sánh T2L và GEPA}\\
     \textbf{\color{Amber}4.3} & \textbf{Kết hợp T2L + GEPA}\\
-    \textbf{\color{Amber}4.4} & \textbf{Demo AdaptLab}
+    \textbf{\color{Amber}4.4} & \textbf{Demo}
   \end{tabular}}
 
 %=======================================================================
 %  4.1  Tái lập T2L
 %=======================================================================
 
-\begin{frame}{4.1\quad Thiết lập thí nghiệm}{5 benchmark T2L · 1.000 câu test/task}
+\begin{frame}{4.1\quad Thiết lập thí nghiệm}
   \footnotesize
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.48\textwidth}
-      \WayCard{block body}{Cố định giữa mọi phiên bản}
+      \WayCard{block body}{Cấu hình mặc định}
         {Mistral-7B-Instruct-v0.2; 5 task lấy từ T2L.}
         {\scriptsize\begin{itemize}\tightlist
-          \item \textbf{1.000 câu test/task}, cùng item ID; split khử trùng lặp và chặn test leakage
-          \item Cùng chat template, extractor; greedy khi chấm điểm (rollout T=0,6)
-          \item 95\% CI: \textbf{paired bootstrap} trên cùng câu test
+          \item \textbf{1.000 câu test/task}
         \end{itemize}}
     \end{column}
     \begin{column}{0.48\textwidth}
-      \WayCard{block body alerted}{Các bề mặt được so sánh}
-        {Base zero-shot và ICL3 là hai control.}
+      \WayCard{block body alerted}{Các method so sánh}
+        {Base zero-shot và ICL3}
         {\scriptsize\begin{itemize}\tightlist
-          \item \textbf{T2L}: LoRA $r{=}8$ từ mô tả, 14 MB; đo 0-shot và ICL3
+          \item \textbf{T2L}: LoRA $r{=}8$; đo 0-shot và ICL3
           \item \textbf{GEPA}: tìm instruction trên base, giữ 3 demos
           \item \textbf{T2L + GEPA}: tìm instruction khi adapter đang trả lời
         \end{itemize}}
@@ -52,73 +50,32 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{4.1\quad Paper và nhóm: tái lập một phần}{So đúng cấu hình zero-shot trước, xem ICL3 như một kết quả bổ sung}
+\begin{frame}{4.1\quad So sánh kết quả giữa Paper và của nhóm}{Accuracy \% · 1.000 câu test/task}
   \centering\scriptsize
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{4.5pt}
-  \begin{tabular}{@{}l rr rrr@{}}
+  \begin{tabular}{@{}l rrrrr@{}}
     \toprule
-    & \multicolumn{2}{c}{\textbf{Base accuracy}} & \multicolumn{2}{c}{\textbf{$\Delta$ T2L 0-shot so với base}}
-      & \textbf{Nhóm:}\\
-    \cmidrule(r){2-3}\cmidrule(lr){4-5}
-    \textbf{Task} & \textbf{Paper} & \textbf{Nhóm} & \textbf{Paper} & \textbf{Nhóm}
-      & \textbf{T2L + ICL3}\\
+    & \multicolumn{2}{c}{\textbf{Paper (Bảng 2)}} & \multicolumn{3}{c}{\textbf{Nhóm tái lập}}\\
+    \cmidrule(r){2-3}\cmidrule(l){4-6}
+    \textbf{Task} & \textbf{base} & \textbf{T2L} & \textbf{base} & \textbf{T2L 0-shot} & \textbf{T2L + ICL3}\\
     \midrule
-    GSM8K      & 40,9 & 47,8 & +4,9  & $-$8,7  & 48,4\\
-    ARC-C      & 65,4 & 74,2 & +12,1 & $-$3,5  & 73,7\\
-    BoolQ      & 71,6 & 82,7 & +13,4 & +2,4    & 86,0\\
-    HellaSwag  & 49,7 & 48,2 & +16,8 & \Win{+13,5} & 64,2\\
-    WinoGrande & 45,0 & 59,4 & +19,2 & $-$31,3 & 64,2\\
+    GSM8K      & 40,9 & 45,8 & 47,8 & 39,1 & 48,4\\
+    ARC-C      & 65,4 & 77,5 & 74,2 & 70,7 & 73,7\\
+    BoolQ      & 71,6 & 85,0 & 82,7 & 85,1 & 86,0\\
+    HellaSwag  & 49,7 & 66,5 & 48,2 & 61,7 & 64,2\\
+    WinoGrande & 45,0 & 64,2 & 59,4 & 28,1 & 64,2\\
     \midrule
-    \textbf{TB 5 task} & 54,5 & 62,5 & \Win{+13,3} & $-$5,5 & \textbf{67,3}\\
+    \textbf{TB 5 task} & 54,5 & 67,8 & 62,5 & 56,9 & \textbf{67,3}\\
     \bottomrule
   \end{tabular}
-
-  \vspace{0.35em}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.48\textwidth}
-      \scriptsize\raggedright
-      \textbf{HellaSwag gần paper}: +13,5 pp so với +16,8 pp (zero-shot).
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \scriptsize\raggedright
-      \textbf{WinoGrande} lỗi định dạng; các task còn lại không tái lập mức tăng.
-    \end{column}
-  \end{columns}
-  \vspace{0.2em}
-  \raggedright{\scriptsize\color{Muted}$\Delta$ = T2L 0-shot $-$ base; cột T2L + ICL3 khác cấu hình.
-  Paper: 3 adapters/task, nhóm: 1; harness dễ hơn 8--14 pp trên 3 task (Phụ lục D).}
-\end{frame}
-
-\begin{frame}{4.1\quad WinoGrande: 3-shot sửa lỗi định dạng}{Run A · cùng adapter, chỉ thêm 3 demonstrations}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.47\textwidth}
-      \WayCard{block body alerted}{Accuracy}
-        {T2L 0-shot $\rightarrow$ T2L + ICL3}
-        {\centering{\HeavyFont\fontsize{22}{25}\selectfont 27,9\% $\rightarrow$ 64,6\%}\par
-         \vspace{0.2em}\scriptsize +36,7 pp, nhưng không nên đọc toàn bộ là ``năng lực mới''.}
-      \vspace{0.7em}
-      \WayCard{block body alerted}{Output không trích được đáp án}
-        {Tỷ lệ \texttt{pred = None} trong cùng extractor}
-        {\centering{\HeavyFont\fontsize{22}{25}\selectfont 59,6\% $\rightarrow$ 8,8\%}}
-    \end{column}
-    \begin{column}{0.49\textwidth}
-      \WayCard{block body}{Vì sao sai?}
-        {Adapter trả tên thực thể thay vì chữ cái lựa chọn.}
-        {\Sub{0-shot}
-         \texttt{\quad “ Sarah.”}\par\vspace{0.5em}
-         \Sub{Với 3 demonstrations}
-         \texttt{The answer is (A).}\par\vspace{0.5em}
-         {\scriptsize\color{Muted}Ví dụ minh họa kiểu output đã lưu trong report; không phải một cặp generation dựng lại.}}
-    \end{column}
-  \end{columns}
 \end{frame}
 
 %=======================================================================
 %  4.2  So sánh T2L và GEPA
 %=======================================================================
 
-\begin{frame}{4.2\quad T2L tạo cải thiện có ý nghĩa trên 3/5 task}{Run chuẩn · T2L + ICL3 so với base, paired bootstrap 95\% CI}
+\begin{frame}{4.2\quad T2L tạo cải thiện có ý nghĩa trên 3/5 task}
   \centering\footnotesize
   \renewcommand{\arraystretch}{1.25}
   \setlength{\tabcolsep}{5.5pt}
@@ -142,7 +99,7 @@
   WinoGrande có CI không chứa 0. GSM8K và ARC-C chưa cho thấy khác biệt rõ.
 \end{frame}
 
-\begin{frame}{4.2\quad GEPA chưa vượt baseline ICL3}{Run chuẩn · cùng base model, cùng 3 demonstrations}
+\begin{frame}{4.2\quad GEPA chưa vượt baseline ICL3}
   \centering\footnotesize
   \renewcommand{\arraystretch}{1.25}
   \setlength{\tabcolsep}{5pt}
@@ -159,14 +116,9 @@
     \textbf{TB} & \textbf{63,0} & 62,6 & $-$0,4 & \textbf{4/5 giữ seed}\\
     \bottomrule
   \end{tabular}
-
-  \vspace{0.7em}
-  \raggedright\footnotesize
-  ARC-C đổi instruction nhưng \textbf{giảm 1,5 pp}. Các task giữ seed lệch nhỏ do serving;
-  TB = hiệu của TB đã làm tròn.
 \end{frame}
 
-\begin{frame}{4.2\quad Chi phí thích nghi và suy luận}{Run chuẩn · tổng 5 task, wall time gồm search + final test}
+\begin{frame}{4.2\quad Chi phí}
   \centering\scriptsize
   \renewcommand{\arraystretch}{1.3}
   \setlength{\tabcolsep}{4.5pt}
@@ -183,53 +135,11 @@
     Wall time (giây)   & 782 & \Best{427} & 2.357 & \Best{1.476}\\
     \bottomrule
   \end{tabular}
-
-  \vspace{0.5em}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.48\textwidth}
-      \WayCard{block body}{Inference với adapter}
-        {T2L + ICL3 so với ICL3}
-        {\textbf{2,6$\times$ ít token hơn}; wall time final test 427 s so với 782 s.}
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \WayCard{block body}{Search trên adapter}
-        {Số search calls gần như nhau}
-        {\textbf{1,6$\times$ nhanh hơn}, giảm 37\% wall time; adapter trả lời ngắn hơn.}
-    \end{column}
-  \end{columns}
 \end{frame}
 
 %=======================================================================
 %  4.3  Kết hợp T2L + GEPA
 %=======================================================================
-
-\begin{frame}{4.3\quad Ba cách kết hợp đã thử}{Prompt transfer và description search là control · số liệu Run A}
-  \scriptsize
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.315\textwidth}
-      \WayCard{block body}{1. Chuyển prompt từ base}
-        {Dùng prompt GEPA của base trên adapter; không search thêm.}
-        {\textbf{GSM8K: $-$4,2 pp}\newline [$-$7,2; $-$1,2]\par\vspace{0.3em}
-         \textbf{WinoGrande: $-$6,0 pp}\newline [$-$8,9; $-$3,2]\par\vspace{0.3em}
-         Gain TB so với base: +5,4 $\rightarrow$ +3,5 pp.\par
-         WinoGrande không trích được: 8,8\% $\rightarrow$ 12,4\%.}
-    \end{column}
-    \begin{column}{0.315\textwidth}
-      \WayCard{block body}{2. Tìm mô tả task}
-        {GEPA sửa description; T2L sinh LoRA mới cho mỗi ứng viên.}
-        {\textbf{WinoGrande: 10 candidates}\newline 63,2\% $<$ 64,6\% mô tả gốc\par\vspace{0.3em}
-         \textbf{GSM8K: 1 candidate}\newline 48,0\% $<$ 49,7\% mô tả gốc\par\vspace{0.3em}
-         Selection set 120 câu (nhiễu $\pm$4 pp); pipeline floor $\approx$1,4 pp.}
-    \end{column}
-    \begin{column}{0.315\textwidth}
-      \WayCard{block body alerted}{3. Đồng tối ưu prompt}
-        {Adapter cố định; mọi rollout và reflection đều chạy trên adapter.}
-        {Reflection thấy \textbf{failure mode thật} của mô hình đã adapt.\par\vspace{0.3em}
-         Không cần sinh adapter mới cho mỗi ứng viên.\par\vspace{0.3em}
-         Kết quả được đối chiếu trực tiếp với T2L + ICL3 ở run chuẩn.}
-    \end{column}
-  \end{columns}
-\end{frame}
 
 \begin{frame}{4.3\quad Đồng tối ưu: adapter có mặt trong vòng search}{Pipeline \texttt{t2l\_gepa\_opt}}
   \centering
@@ -263,11 +173,10 @@
 
   \vspace{0.4em}
   \scriptsize
-  $D_{\text{train}}=150$ câu · $D_{\text{pareto}}=300$ câu · 3 demos cố định · rollout $T{=}0{,}6$\\
-  Reflection: \texttt{deepseek-v4.1-flash} · mọi số báo cáo: greedy trên 1.000 câu test riêng.
+  Reflection: \texttt{deepseek-v4.1-flash}
 \end{frame}
 
-\begin{frame}{4.3\quad Kết quả đồng tối ưu: +0,1 pp, chưa có ý nghĩa}{Run chuẩn · so với T2L + ICL3 trên cùng câu test}
+\begin{frame}{4.3\quad Kết quả kết hợp T2L + GEPA}
   \begin{columns}[T,onlytextwidth]
     \begin{column}{0.58\textwidth}
       \centering\scriptsize
@@ -290,9 +199,8 @@
     \begin{column}{0.38\textwidth}
       \WayCard{block body alerted}{Đọc kết quả}
         {T2L trong bảng là T2L + ICL3.}
-        {\textbf{0/5 task} có CI loại 0.\par\vspace{0.4em}
-         \textbf{T2L + GEPA} giữ nguyên seed ở \textbf{2/5 task}: GSM8K và WinoGrande.\par\vspace{0.4em}
-         Toàn bộ cải thiện +4,9 pp so với base chủ yếu đến từ adapter + demos.}
+        {
+         \textbf{T2L + GEPA} giữ nguyên seed ở \textbf{2/5 task}: GSM8K và WinoGrande.}
     \end{column}
   \end{columns}
   \vspace{0.4em}
@@ -301,101 +209,8 @@
   rằng prompt search tạo thêm lợi ích.
 \end{frame}
 
-\begin{frame}{4.3\quad Dao động nằm ở quá trình tìm kiếm}{Run A (17/11) và run chuẩn (22/11): cùng protocol, seed và câu test}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.48\textwidth}
-      \centering\scriptsize
-      \renewcommand{\arraystretch}{1.2}
-      \begin{tabular}{@{}l r r r@{}}
-        \toprule
-        \textbf{Phiên bản (TB \%)} & \textbf{Run A} & \textbf{Chuẩn} & \textbf{$\Delta$}\\
-        \midrule
-        base           & 62,2 & 62,5 & +0,3\\
-        3-shot         & 63,1 & 63,0 & $-$0,1\\
-        T2L + ICL3     & 67,6 & 67,3 & $-$0,3\\
-        \midrule
-        GEPA           & 64,1 & 62,6 & {\color{red!70!black}$-$1,5}\\
-        T2L + GEPA     & 68,7 & 67,4 & {\color{red!70!black}$-$1,3}\\
-        \bottomrule
-      \end{tabular}
-
-      \vspace{0.6em}
-      \raggedright\scriptsize
-      GEPA trên GSM8K: \textbf{45,4 $\rightarrow$ 39,8\%} ($-$5,6 pp).\par
-      T2L + GEPA trên WinoGrande: \textbf{67,8 $\rightarrow$ 64,7\%} ($-$3,1 pp).\par
-      Gain của combination: \textbf{+1,1 $\rightarrow$ +0,1 pp}.
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \WayCard{block body}{Prompt dài hơn, nhưng chưa tốt hơn rõ}
-        {Seed $\rightarrow$ best của T2L + GEPA ở run chuẩn}
-        {\begin{tabular}{@{}lr@{}}
-           ARC-C & 130 \(\rightarrow\) 2.332 ký tự\\
-           BoolQ & 60 \(\rightarrow\) 2.963 ký tự\\
-           HellaSwag & 130 \(\rightarrow\) 1.768 ký tự
-         \end{tabular}\par\vspace{0.5em}
-         Không task nào có gain có ý nghĩa ở run chuẩn.\par\vspace{0.4em}
-         Các phiên bản cố định chỉ lệch $\le$0,3 pp; các phiên bản search lệch 1,3--1,5 pp.}
-    \end{column}
-  \end{columns}
-  \vspace{0.4em}
-  \centering\footnotesize
-  Cần \textbf{nhiều GEPA seeds}: CI trên câu test không bao phủ biến động của quá trình search.
-\end{frame}
-
-\begin{frame}{4.3\quad Ba con số để kết luận}{Những gì dữ liệu hiện tại đủ sức nói}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.31\textwidth}
-      \WayCard{block body alerted}{+4,8 pp}
-        {T2L + ICL3 so với base ở run chuẩn; Run A đạt +5,4 pp.}
-        {\textbf{3/5 task} có cải thiện có ý nghĩa; adapter chỉ 14 MB/task.}
-    \end{column}
-    \begin{column}{0.31\textwidth}
-      \WayCard{block body alerted}{+0,1 pp}
-        {Phần GEPA thêm trên T2L ở run chuẩn; Run A là +1,1 pp.}
-        {\textbf{0/5 task} có gain có ý nghĩa ở run chuẩn: chưa thể khẳng định synergy.}
-    \end{column}
-    \begin{column}{0.31\textwidth}
-      \WayCard{block body alerted}{1,3--1,5 pp}
-        {Dao động trung bình của các phiên bản search giữa hai lần chạy.}
-        {Phiên bản cố định lệch $\le$0,3 pp: \textbf{search là nguồn bất ổn chính}.}
-    \end{column}
-  \end{columns}
-
-  \vspace{0.8em}
-  \centering\footnotesize
-  Trong thí nghiệm này, adapter tạo phần cải thiện rõ và rẻ; co-optimisation là cách ghép hợp lý,
-  nhưng cần nhiều seeds trước khi kết luận lợi ích thêm.
-\end{frame}
-
-%=======================================================================
-%  4.4  Demo
-%=======================================================================
-
-\begin{frame}{4.4\quad Demo AdaptLab}{Kịch bản 8--10 phút · \href{https://cs222.lethienquan.site}{cs222.lethienquan.site}}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.57\textwidth}
-      \WayCard{block body alerted}{Một câu WinoGrande, bốn phiên bản thật}
-        {Live playground · khoảng 5--6 phút}
-        {\textbf{1.} Chạy cùng câu test qua Base, T2L, GEPA và T2L + GEPA.\par\vspace{0.35em}
-         \textbf{2.} Đối chiếu raw output, extracted answer, đúng/sai, latency và token.\par\vspace{0.35em}
-         \textbf{3.} Mở exact prompt để thấy demos, instruction và adapter được chọn.}
-    \end{column}
-    \begin{column}{0.39\textwidth}
-      \WayCard{block body}{Prompt optimization}
-        {Dữ liệu đã lưu · khoảng 3--4 phút}
-        {Mở seed $\rightarrow$ candidates $\rightarrow$ best của WinoGrande và ARC-C; kiểm tra
-         trực tiếp các nhận định ``giữ seed'' và ``prompt dài hơn'' ở slide trước.}
-    \end{column}
-  \end{columns}
-  \vspace{0.5em}
-  \centering\footnotesize
-  Demo dùng artifacts và generation thật, không mô phỏng search. Nếu endpoint gặp sự cố:
-  mở prompt history/per-item đã lưu (xem \texttt{docs/demo.md}) hoặc chạy local.
-\end{frame}
-
 % --- APPENDIX ---
-
-\begin{frame}{Phụ lục A\quad Kết quả đầy đủ: 6 phiên bản trên 5 task}{Run chuẩn · accuracy \%, 1.000 câu test/task}
+\begin{frame}{Kết quả đầy đủ}
   \centering\scriptsize
   \renewcommand{\arraystretch}{1.2}
   \setlength{\tabcolsep}{5pt}
@@ -416,62 +231,41 @@
   \end{tabular}
 \end{frame}
 
-\begin{frame}{Phụ lục B\quad Thiết lập GEPA chi tiết}{Dùng cho câu hỏi về protocol}
+\begin{frame}{Cấu hình GEPA}
   \centering\footnotesize
   \renewcommand{\arraystretch}{1.35}
   \begin{tabular}{@{}>{\bfseries}l>{\raggedright\arraybackslash}p{0.72\linewidth}@{}}
     \toprule
     Ngân sách       & 1.500 metric call/task: 300 để chấm tập chọn, 1.200 để tìm kiếm\\
-    Dữ liệu         & $D_{\text{train}}$ 150 câu, $D_{\text{pareto}}$ 300 câu; không trùng test\\
-    Rollout         & temperature $T{=}0{,}6$, top-p 0,95; tối đa 512 tokens\\
-    Reflection LM   & \texttt{deepseek-v4.1-flash}; temperature 1,0; tối đa 1.024 tokens\\
+    Dữ liệu         & $D_{\text{train}}$ 150 câu, $D_{\text{pareto}}$ 300 câu\\
+    Rollout         & temperature $T{=}0{,}6$\\
+    Reflection LM   & \texttt{deepseek-v4.1-flash}\\
     Phản hồi        & đúng/sai + câu trả lời của model + đáp án đúng + lời giải tham khảo\\
-    Phạm vi sửa     & seed = luật của chính task; 3 ví dụ mẫu cố định, GEPA chỉ sửa instruction\\
-    Đánh giá cuối   & instruction tốt nhất chạy lại trên 1.000 câu test, greedy\\
     \bottomrule
   \end{tabular}
 \end{frame}
 
-\begin{frame}{Phụ lục C\quad Kiểm chứng harness}{Các lỗi đã làm invalid kết quả trước đó và đã có regression test}
-  \footnotesize
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.48\textwidth}
-      \WayCard{block body}{Thiếu passage của BoolQ}
-        {Passage được lưu nhưng không render vào prompt.}
-        {\textbf{Gemma 56,1\%} (thiếu passage) · \textbf{Mistral 82,4\%} (đã sửa); khác model, không phải before/after.}
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \WayCard{block body}{GEPA không nhìn thấy options}
-        {Renderer chỉ đưa options vào ARC-C ở bản lỗi.}
-        {Seed HellaSwag: \textbf{26,7\% $\rightarrow$ 55,7\%} sau khi sửa. Sweep lỗi đã bị xóa, không báo cáo.}
-    \end{column}
-  \end{columns}
-  \begin{columns}[T,onlytextwidth]
-    \begin{column}{0.48\textwidth}
-      \scriptsize\raggedright
-      \begin{itemize}\tightlist
-        \item Seed instruction từng dùng nhầm GSM8K; nay theo luật từng task.
-        \item Description proposer ban đầu tạo 0 candidates; bản riêng tạo 10 trên WinoGrande.
-      \end{itemize}
-    \end{column}
-    \begin{column}{0.48\textwidth}
-      \scriptsize\raggedright
-      \begin{itemize}\tightlist
-        \item Mỗi lỗi trên hiện có regression test.
-        \item Mọi run dùng chung extractor và chặn test leakage.
-      \end{itemize}
-    \end{column}
-  \end{columns}
+%=======================================================================
+%  4.4  Demo
+%=======================================================================
+
+\begin{frame}{4.4\quad Demo}{\href{https://cs222.lethienquan.site}{cs222.lethienquan.site}}
 \end{frame}
 
-\begin{frame}{Phụ lục D\quad Giới hạn khi diễn giải}{Không dùng CI trên câu test để che biến động giữa các lần search}
-  \scriptsize
-  \begin{itemize}\setlength{\itemsep}{0.35em}
-    \item Một adapter/task từ description đầu tiên; paper T2L trung bình trên \textbf{3 adapters}.
-    \item Một search trajectory cho mỗi arm ở mỗi lần chạy; hai executions chỉ là hai điểm quan sát.
-    \item Harness không phải lm-eval và dễ hơn: base cao hơn paper khoảng \textbf{8--14 pp} trên ARC-C, BoolQ và WinoGrande.
-          Chỉ so sánh trong cùng harness.
-    \item Reflection model là \texttt{deepseek-v4.1-flash}, không phải GPT-4.1-mini của paper GEPA.
-    \item Description search dùng 120 câu chọn (nhiễu $\pm$4 pp); pipeline floor $\approx$1,4 pp, nên chưa đủ sức xác nhận cải thiện nhỏ.
-  \end{itemize}
+% --- CLOSING ---
+\begin{frame}[plain,c]
+  \centering
+  \vspace{1.2em}
+  {\Huge \bfseries Cảm ơn thầy cô và các bạn đã lắng nghe!}
+
+  \vspace{0.8em}
+  {\large \color{gray} Rất mong nhận được câu hỏi và góp ý thảo luận từ mọi người.}
+
+  \vspace{1.8em}
+  \rule{0.45\linewidth}{0.5pt}
+
+  \vspace{1em}
+  {\small \textbf{CS222 -- Seminar: Prompting and PEFT -- Nhóm 5}} \\
+  \vspace{0.3em}
+  {\footnotesize Demo: \texttt{cs222.lethienquan.site}}
 \end{frame}
