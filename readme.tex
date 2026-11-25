@@ -1,0 +1,648 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{fontspec}
+\usepackage[vietnamese]{babel}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{needspace}
+\usepackage{amsmath}
+
+\setsansfont{BeVietnamPro}[
+  Path=slides/fonts/, Extension=.ttf,
+  UprightFont=*-Regular, BoldFont=*-SemiBold,
+  ItalicFont=*-Italic, BoldItalicFont=*-SemiBoldItalic]
+\setmonofont{lmmono10-regular.otf}[Scale=MatchLowercase]
+
+\definecolor{ink}{HTML}{1F2937}
+\definecolor{muted}{HTML}{64748B}
+\definecolor{accent}{HTML}{1D4ED8}
+\definecolor{soft}{HTML}{EFF6FF}
+\definecolor{rule}{HTML}{CBD5E1}
+\definecolor{codebg}{HTML}{F8FAFC}
+\definecolor{warn}{HTML}{B45309}
+\definecolor{warnbg}{HTML}{FFF7ED}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accent,
+  urlcolor=accent,
+  pdftitle={Hướng dẫn sử dụng repo để benchmark},
+  pdfauthor={CS222 -- Nhóm 5}
+}
+\urlstyle{same}
+
+\titleformat{\section}{\Large\bfseries\color{accent}}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.2em}{0.45em}
+\titlespacing*{\subsection}{0pt}{0.9em}{0.3em}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.35em}
+\setlist[itemize]{topsep=0.2em,itemsep=0.15em,leftmargin=1.4em}
+\setlist[enumerate]{topsep=0.2em,itemsep=0.2em,leftmargin=1.6em}
+
+\lstdefinestyle{shell}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{rule},
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  xleftmargin=0.4em,
+  xrightmargin=0.4em,
+  aboveskip=0.45em,
+  belowskip=0.55em
+}
+\lstset{style=shell}
+
+\newcommand{\code}[1]{\texttt{\detokenize{#1}}}
+\newcommand{\Repo}{\texttt{t2lora-gepa}}
+\newcommand{\Important}[1]{%
+  \par\smallskip\noindent
+  \colorbox{warnbg}{\parbox{\dimexpr\linewidth-2\fboxsep\relax}{%
+    \raggedright\textcolor{warn}{\textbf{Lưu ý:}} #1}}\par\smallskip}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{muted}Hướng dẫn sử dụng repo để benchmark}
+\fancyhead[R]{\small\color{muted}CS222 -- Nhóm 5}
+\fancyfoot[C]{\small\color{muted}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{2.2cm}
+  {\color{accent}\rule{\linewidth}{1.2pt}}\par\vspace{1.0cm}
+  {\Huge\bfseries Hướng dẫn sử dụng repo\\[0.25em] để benchmark\par}
+  \vspace{0.9cm}
+  {\Large T2L, GEPA và T2L + GEPA\par}
+  \vspace{0.9cm}
+  {\large Repository: \href{https://github.com/lethienquan28052006/t2lora-gepa}{%
+    \texttt{github.com/lethienquan28052006/t2lora-gepa}}\par}
+  \vspace{0.9cm}
+  {\color{accent}\rule{\linewidth}{0.6pt}}\par
+  \vfill
+  {\large CS222 -- Seminar: Prompting and PEFT\par}
+  {\large Nhóm 5\par}
+  \vspace{0.8cm}
+  {\large Cập nhật: 25/11/2026\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\section{Mục đích và phạm vi}
+
+Tài liệu này hướng dẫn cách dùng repo \Repo{} để chạy một thí nghiệm benchmark từ đầu đến cuối. Nội dung chỉ mô tả \textbf{cách vận hành}: cài đặt, cấu hình, sinh adapter, chạy đánh giá, chạy GEPA, xuất kết quả và mở demo.
+
+Tài liệu \textbf{không} trình bày hay diễn giải kết quả accuracy. Mọi số liệu phát sinh phụ thuộc vào model, checkpoint, endpoint, dữ liệu và cấu hình thực tế của lần chạy.
+
+\subsection{Luồng tổng quát}
+
+\begin{center}
+\small
+\begin{tabular}{@{}c c c@{}}
+\textbf{1. Cấu hình} & $\rightarrow$ & \textbf{2. Sinh LoRA T2L} \\
+$\downarrow$ & & $\downarrow$ \\
+\textbf{4. Chạy grid} & $\leftarrow$ & \textbf{3. Serve model + LoRA} \\
+$\downarrow$ & & \\
+\textbf{5. Chạy GEPA} & $\rightarrow$ & \textbf{6. Xuất bảng/bundle} \\
+$\downarrow$ & & \\
+\multicolumn{3}{c}{\textbf{7. Mở demo hoặc kiểm tra artifact}}
+\end{tabular}
+\end{center}
+
+\section{Yêu cầu môi trường}
+
+\begin{itemize}
+  \item Linux, Python \textbf{3.10 hoặc 3.11}. Repo khai báo \code{>=3.10,<3.12}.
+  \item \code{uv} để quản lý môi trường Python.
+  \item GPU đủ bộ nhớ cho model benchmark và, nếu dùng, reflection model.
+  \item vLLM trong môi trường riêng \code{.venv-serve}; repo gọi binary này trực tiếp.
+  \item Quyền tải model từ Hugging Face, hoặc model đã có sẵn trên máy.
+  \item Checkpoint T2L đã tải về máy.
+  \item API key cho reflection model nếu dùng endpoint hosted.
+\end{itemize}
+
+\Important{Repo không đóng gói model weights hay checkpoint T2L. Không commit API key, model weights hoặc thư mục kết quả vào git.}
+
+\section{Cài đặt repo}
+
+\subsection{Lấy mã nguồn và submodule}
+
+\begin{lstlisting}
+git clone https://github.com/lethienquan28052006/t2lora-gepa.git
+cd t2lora-gepa
+git submodule update --init --recursive
+\end{lstlisting}
+
+Repo dùng \code{vendor/text-to-lora} làm submodule. Nếu thư mục này rỗng, phần sinh adapter T2L sẽ không chạy được.
+
+\subsection{Cài môi trường Python chính}
+
+\begin{lstlisting}
+uv sync --extra dev
+uv run pytest -q
+\end{lstlisting}
+
+Trong quá trình phát triển, có thể chạy thêm:
+
+\begin{lstlisting}
+uv run ruff check src tests scripts
+\end{lstlisting}
+
+\subsection{Tạo môi trường riêng cho Text-to-LoRA}
+
+Phần T2L dùng dependency riêng của repo vendor. Tạo môi trường và trỏ đường dẫn Python vào file cấu hình:
+
+\begin{lstlisting}
+cd vendor/text-to-lora
+uv sync
+cd ../..
+export T2L_PYTHON="$PWD/vendor/text-to-lora/.venv/bin/python"
+"$T2L_PYTHON" --version
+\end{lstlisting}
+
+\subsection{Chuẩn bị vLLM để serve}
+
+Repo giả định có vLLM tại \code{.venv-serve/bin/vllm}. Kiểm tra trước:
+
+\begin{lstlisting}
+test -x .venv-serve/bin/vllm
+.venv-serve/bin/vllm --version
+\end{lstlisting}
+
+Nếu chưa có, tạo môi trường riêng và cài một phiên bản vLLM tương thích với CUDA/PyTorch trên máy:
+
+\begin{lstlisting}
+uv venv .venv-serve --python 3.10
+uv pip install --python .venv-serve/bin/python vllm
+\end{lstlisting}
+
+Không cài vLLM chung vào môi trường \code{.venv} của repo để tránh xung đột dependency.
+
+\section{Chuẩn bị thư mục và cấu hình}
+
+\subsection{Tạo các thư mục làm việc}
+
+Các đường dẫn dưới đây chỉ là ví dụ. Có thể đặt dữ liệu ở ổ đĩa khác:
+
+\begin{lstlisting}
+export REPO_ROOT="$PWD"
+export T2L_ROOT="/data/benchmarks/t2l-mistral"
+export RUN_DIR="$T2L_ROOT/runs/my-run/results"
+export CONFIG="$REPO_ROOT/configs/mistral.local.yaml"
+
+mkdir -p "$T2L_ROOT"/{data,loras,hf,runs,artifacts}
+mkdir -p "$RUN_DIR"
+\end{lstlisting}
+
+\subsection{Tạo config riêng cho lần chạy}
+
+Không sửa trực tiếp config mẫu nếu muốn giữ lịch sử tái lập. Tạo bản sao:
+
+\begin{lstlisting}
+cp configs/mistral.yaml "$CONFIG"
+\end{lstlisting}
+
+Các trường cần kiểm tra hoặc sửa:
+
+\begin{center}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.30\linewidth}>{\raggedright\arraybackslash}p{0.62\linewidth}@{}}
+\toprule
+\textbf{Trường} & \textbf{Ý nghĩa} \\
+\midrule
+\code{model_id} & Tên model trên Hugging Face hoặc tên model đã đăng ký ở endpoint. \\
+\code{t2l_checkpoint} & Thư mục checkpoint T2L, ví dụ \code{.../trained_t2l/mistral_7b_t2l}. \\
+\code{reflection_model} & Model dùng cho reflection trong GEPA. \\
+\code{reflection_base_url} & Endpoint OpenAI-compatible của reflection model; để trống nếu muốn chạy reflection server local. \\
+\code{reflection_api_key_env} & Tên biến môi trường chứa API key. \\
+\code{tasks} & Danh sách benchmark cần chạy. \\
+\code{seeds} & Seed cho các lần search GEPA. \\
+\code{gepa_budget} & Số metric call tối đa cho mỗi task. \\
+\code{gpu_target} & GPU dùng để chạy model benchmark. \\
+\code{gpu_reflect} & GPU dùng cho reflection server local, nếu có. \\
+\code{results_dir} & Nơi ghi kết quả mặc định. \\
+\code{cache_dir} & Nơi cache dữ liệu benchmark. \\
+\code{vllm_bin} & Đường dẫn binary vLLM. \\
+\code{t2l_python} & Python có dependency T2L, thường là \code{vendor/text-to-lora/.venv/bin/python}. \\
+\code{max_tokens}, \code{temperature} & Cấu hình decode cho câu trả lời cuối. \\
+\code{rollout_temperature}, \code{rollout_top_p} & Cấu hình decode cho các rollout trong search. \\
+\code{max_eval_items} & Số câu test tối đa cho mỗi arm và task. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Ví dụ tối thiểu:
+
+\begin{lstlisting}
+model_id: mistralai/Mistral-7B-Instruct-v0.2
+t2l_checkpoint: /duong/dan/toi/trained_t2l/mistral_7b_t2l
+reflection_model: deepseek-v4.1-flash
+reflection_base_url: https://your-provider.example/v1
+reflection_api_key_env: REFLECT_API_KEY
+
+tasks: [gsm8k, arc_challenge, boolq, hellaswag, winogrande]
+seeds: [0]
+gepa_budget: 1500
+gpu_target: 0
+gpu_reflect: 0
+results_dir: /duong/dan/toi/results
+cache_dir: /duong/dan/toi/data
+t2l_python: /duong/dan/toi/venv-t2l/bin/python
+max_eval_items: 1000
+\end{lstlisting}
+
+\Important{Nếu \code{reflection_base_url} để trống, repo sẽ lập kế hoạch chạy reflection server local và kiểm tra \code{gpu_target} khác \code{gpu_reflect}. Nếu dùng reflection API hosted, đặt \code{reflection_base_url} và cung cấp key qua biến môi trường.}
+
+\subsection{Biến môi trường}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.39\linewidth}>{\raggedright\arraybackslash}p{0.53\linewidth}@{}}
+\toprule
+\textbf{Biến} & \textbf{Dùng khi nào} \\
+\midrule
+\code{REFLECT_API_KEY} & Bắt buộc nếu reflection API cần bearer key. Có thể đổi tên qua \code{reflection_api_key_env}. \\
+\code{T2L_LORA_ROOT} & Trỏ tới thư mục chứa các adapter đã sinh, mặc định là \code{artifacts/t2l_loras}. \\
+\code{CUDA_VISIBLE_DEVICES} & Chọn GPU cho tiến trình serve vLLM. \\
+\code{VLLM_ALLOW_RUNTIME_LORA_UPDATING} & Bật khi cần load/unload adapter động cho description search. \\
+\code{TARGET_API_KEY_ENV} & Tên biến chứa key của endpoint benchmark, nếu endpoint yêu cầu. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{lstlisting}
+export REFLECT_API_KEY="..."
+export T2L_LORA_ROOT="$T2L_ROOT/loras"
+\end{lstlisting}
+
+\section{Sinh adapter T2L}
+
+Sinh một LoRA cho mỗi task rồi kiểm tra thư mục đầu ra:
+
+\begin{lstlisting}
+uv run python scripts/gen_mistral_loras.py \
+  --config "$CONFIG" \
+  --out "$T2L_ROOT/loras"
+
+find "$T2L_ROOT/loras" -maxdepth 2 \
+  -name adapter_config.json -print
+\end{lstlisting}
+
+Có thể chạy một task trước để kiểm tra pipeline:
+
+\begin{lstlisting}
+uv run python scripts/gen_mistral_loras.py \
+  --config "$CONFIG" \
+  --out "$T2L_ROOT/loras" \
+  --tasks gsm8k
+\end{lstlisting}
+
+Mỗi adapter phải có tối thiểu:
+
+\begin{lstlisting}
+$T2L_ROOT/loras/gsm8k/
+  adapter_config.json
+  adapter_model.safetensors   # hoặc định dạng weight tương ứng
+\end{lstlisting}
+
+Script tự sửa \code{use_rslora} về \code{false} để khớp plain \code{alpha/r} scaling mà checkpoint T2L được huấn luyện.
+
+\Important{Không tự đổi \code{use_rslora=true} sau khi sinh adapter. Có thể làm adapter quá mạnh và khiến mô hình suy giảm mạnh trên smoke test.}
+
+\section{Serve model và các adapter}
+
+\subsection{Tạo cấu hình vLLM}
+
+Script \code{write_demo_config.py} quét thư mục \code{$T2L_ROOT/loras}, tạo danh sách LoRA và ghi file serve:
+
+\begin{lstlisting}
+uv run python scripts/write_demo_config.py \
+  --root "$T2L_ROOT" \
+  --model "/duong/dan/toi/Mistral-7B-Instruct-v0.2" \
+  --gpu-util 0.55 \
+  --max-model-len 4096 \
+  --port 8010 \
+  --out serve_bench.yaml
+\end{lstlisting}
+
+File được ghi tại \code{$T2L_ROOT/serve_bench.yaml}. Có thể mở file để kiểm tra:
+
+\begin{lstlisting}
+sed -n '1,120p' "$T2L_ROOT/serve_bench.yaml"
+\end{lstlisting}
+
+\subsection{Khởi động vLLM}
+
+Chạy server trong một terminal riêng:
+
+\begin{lstlisting}
+export GPU=0
+export MODEL_PORT=8010
+export VLLM_ALLOW_RUNTIME_LORA_UPDATING=1
+
+CUDA_VISIBLE_DEVICES="$GPU" \
+  .venv-serve/bin/vllm serve \
+  --config "$T2L_ROOT/serve_bench.yaml"
+\end{lstlisting}
+
+Nếu không dùng description search, có thể bỏ \code{VLLM_ALLOW_RUNTIME_LORA_UPDATING}. Giữ biến này nếu muốn thử load adapter động.
+
+\subsection{Kiểm tra endpoint}
+
+Mở terminal khác:
+
+\begin{lstlisting}
+curl -s "http://127.0.0.1:${MODEL_PORT}/v1/models" \
+  | uv run python -m json.tool
+\end{lstlisting}
+
+Endpoint phải trả về model gốc và các module dạng \code{t2l_<task>}. Nếu thiếu adapter, kiểm tra lại:
+
+\begin{lstlisting}
+ls -1 "$T2L_ROOT/loras"
+grep -n "lora_modules" -A12 "$T2L_ROOT/serve_bench.yaml"
+\end{lstlisting}
+
+\section{Smoke test trước khi chạy dài}
+
+Luôn chạy smoke test trên một slice nhỏ trước grid đầy đủ:
+
+\begin{lstlisting}
+export BASE_URL="http://127.0.0.1:8010"
+
+T2L_LORA_ROOT="$T2L_ROOT/loras" \
+  uv run python scripts/mistral_smoke.py \
+  --config "$CONFIG" \
+  --base-url "$BASE_URL" \
+  --limit 100
+\end{lstlisting}
+
+Smoke test kiểm tra bốn arm trên một slice và phát hiện adapter bị collapse hoặc các arm lệch bất thường. Nếu lệnh trả mã khác 0, dừng lại và kiểm tra endpoint/adapter trước khi chạy full grid.
+
+\section{Chạy benchmark grid}
+
+\subsection{Chạy thử kế hoạch job}
+
+\begin{lstlisting}
+uv run python scripts/run_grid.py \
+  --config "$CONFIG" \
+  --results-dir "$RUN_DIR" \
+  --dry-run
+\end{lstlisting}
+
+Lệnh này chỉ in danh sách job, không gọi model. Dùng để kiểm tra task, arm, seed và GPU.
+
+\subsection{Chạy các arm không dùng GEPA}
+
+\begin{lstlisting}
+T2L_LORA_ROOT="$T2L_ROOT/loras" \
+  uv run python scripts/run_grid.py \
+  --config "$CONFIG" \
+  --base-url "$BASE_URL" \
+  --arms base,icl3,t2l,t2l_icl \
+  --no-gepa \
+  --results-dir "$RUN_DIR"
+\end{lstlisting}
+
+Nếu muốn chạy toàn bộ grid mặc định, bỏ \code{--arms} và \code{--no-gepa}. Chạy từng nhóm nhỏ trước thường dễ debug hơn.
+
+\subsection{Chạy GEPA trên base model}
+
+Nếu reflection dùng API hosted:
+
+\begin{lstlisting}
+export REFLECT_API_KEY="..."
+
+T2L_LORA_ROOT="$T2L_ROOT/loras" \
+  uv run python scripts/run_grid.py \
+  --config "$CONFIG" \
+  --base-url "$BASE_URL" \
+  --gepa-only \
+  --gepa-arms gepa_3shot \
+  --gepa-tasks gsm8k \
+  --gepa-seeds 0 \
+  --results-dir "$RUN_DIR"
+\end{lstlisting}
+
+Chạy một task trước để kiểm tra key, feedback và reflection model. Khi ổn, bỏ \code{--gepa-tasks} để dùng toàn bộ task trong config.
+
+\subsection{Chạy GEPA đồng tối ưu với adapter}
+
+Sau khi các arm \code{base}, \code{icl3}, \code{t2l}, \code{t2l_icl} đã có kết quả trong \code{$RUN_DIR}:
+
+\begin{lstlisting}
+T2L_LORA_ROOT="$T2L_ROOT/loras" \
+  uv run python scripts/run_grid.py \
+  --config "$CONFIG" \
+  --base-url "$BASE_URL" \
+  --gepa-only \
+  --gepa-arms t2l_gepa_opt \
+  --gepa-seeds 0 \
+  --results-dir "$RUN_DIR"
+\end{lstlisting}
+
+Mỗi rollout và lần chấm cuối của arm này chạy trên adapter \code{t2l_<task>} tương ứng.
+
+\subsection{Chạy toàn bộ trong một lệnh}
+
+Khi pipeline đã ổn định, có thể chạy các arm so sánh và GEPA trong một lần:
+
+\begin{lstlisting}
+T2L_LORA_ROOT="$T2L_ROOT/loras" \
+  uv run python scripts/run_grid.py \
+  --config "$CONFIG" \
+  --base-url "$BASE_URL" \
+  --arms base,icl3,t2l,t2l_icl \
+  --gepa-arms gepa_3shot,t2l_gepa_opt \
+  --gepa-seeds 0 \
+  --results-dir "$RUN_DIR"
+\end{lstlisting}
+
+\section{Đọc output và kiểm tra kết quả}
+
+Mỗi job ghi một file summary \code{.jsonl}, cùng các file prompt/gate liên quan. Các file thường gặp:
+
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.52\linewidth}>{\raggedright\arraybackslash}p{0.40\linewidth}@{}}
+\toprule
+\textbf{File} & \textbf{Nội dung} \\
+\midrule
+\code{<arm>_<task>_s0.jsonl} & Summary và per-item record của arm. \\
+\code{<arm>_<task>_s0.gate.json} & Kết quả gate và trạng thái search. \\
+\code{gepa_3shot_<task>_s0_seed_prompt.txt} & Instruction seed của GEPA. \\
+\code{gepa_3shot_<task>_s0_best_prompt.txt} & Instruction tốt nhất tìm được. \\
+\code{*_candidates.json} & Lịch sử ứng viên và điểm Pareto. \\
+\code{*_rendered_example.txt} & Prompt đầy đủ của seed và best. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Đánh giá gate và xuất bảng}
+
+\begin{lstlisting}
+uv run python scripts/eval_mistral_gate.py \
+  --results "$RUN_DIR"
+
+uv run python scripts/make_tables.py \
+  --results "$RUN_DIR" \
+  --out "$T2L_ROOT/reports/my-run"
+\end{lstlisting}
+
+\code{make_tables.py} sinh bảng accuracy/cost từ các file summary. Có thể dùng \code{build_report_v1.py} nếu cần thêm paired CI và prompt history:
+
+\begin{lstlisting}
+uv run python scripts/build_report_v1.py \
+  --config "$CONFIG" \
+  --run-dir "$RUN_DIR" \
+  --out "$T2L_ROOT/reports/my-run-v1"
+\end{lstlisting}
+
+\subsection{Kiểm tra tính đầy đủ}
+
+Trước khi dùng kết quả, kiểm tra:
+
+\begin{enumerate}
+  \item Mỗi task có đủ các arm dự kiến.
+  \item Số item test khớp \code{max_eval_items} hoặc ghi rõ nếu là slice nhỏ.
+  \item Gate không báo adapter collapse.
+  \item Prompt seed/best và candidate history tồn tại với các arm GEPA.
+  \item Không có test item xuất hiện trong train hoặc pareto split.
+\end{enumerate}
+
+\section{Tạo artifact bundle}
+
+Bundle đóng gói adapter, prompt, kết quả per-item và manifest để tái sử dụng hoặc mở demo:
+
+\begin{lstlisting}
+uv run python scripts/build_artifact_bundle.py \
+  --config "$CONFIG" \
+  --run-dir "$RUN_DIR" \
+  --out "$T2L_ROOT/artifacts/my-run" \
+  --tarball "$T2L_ROOT/artifacts/my-run.tar.gz"
+\end{lstlisting}
+
+Sau khi tạo, xem manifest:
+
+\begin{lstlisting}
+uv run python -m json.tool \
+  "$T2L_ROOT/artifacts/my-run/manifest.json" | head -n 80
+\end{lstlisting}
+
+\Important{Không sửa tay manifest hoặc kết quả per-item. Nếu chạy lại cấu hình khác, tạo \code{RUN_DIR} và bundle mới.}
+
+\section{Mở demo AdaptLab}
+
+\subsection{Chạy demo trên máy local}
+
+Demo cần endpoint đang serve model gốc và các adapter, cùng một run directory có kết quả:
+
+\begin{lstlisting}
+T2L_ROOT="$T2L_ROOT" \
+RUN_DIR="$RUN_DIR" \
+GPU="$GPU" \
+MODEL_PORT="$MODEL_PORT" \
+WEB_PORT=7860 \
+./scripts/start_demo.sh
+\end{lstlisting}
+
+Mở \code{http://localhost:7860}. Script sẽ tái sử dụng endpoint/model server đang chạy nếu có.
+
+\subsection{Chạy demo không cần GPU}
+
+Có thể dựng web app với endpoint giả để kiểm tra giao diện và prompt builder:
+
+\begin{lstlisting}
+# Terminal 1
+uv run python tests/e2e/fake_endpoint.py --port 18010
+
+# Terminal 2
+PYTHONPATH="$PWD/src" uv run python -m t2lgepa.webapp.app \
+  --config "$CONFIG" \
+  --results "$RUN_DIR" \
+  --base-url http://127.0.0.1:18010 \
+  --host 127.0.0.1 --port 17860
+\end{lstlisting}
+
+Endpoint giả chỉ dùng cho kiểm tra giao diện, không dùng để tạo số liệu benchmark.
+
+\subsection{Smoke test manifest}
+
+Nếu đã có bundle, kiểm tra bốn phiên bản qua endpoint:
+
+\begin{lstlisting}
+uv run python scripts/demo_smoke.py \
+  --manifest "$T2L_ROOT/artifacts/my-run/manifest.json" \
+  --base-url "$BASE_URL" \
+  --out "$T2L_ROOT/demo-smoke.json"
+\end{lstlisting}
+
+\section{Checklist trước khi chạy dài}
+
+\begin{enumerate}
+  \item \code{uv run pytest -q} pass.
+  \item Submodule \code{vendor/text-to-lora} đã được khởi tạo.
+  \item \code{t2l_python} chạy được và import được dependency T2L.
+  \item Sinh đủ adapter cho các task trong config.
+  \item \code{/v1/models} trả về model gốc và đủ \code{t2l_<task>}.
+  \item Smoke test với \code{--limit} chạy thành công.
+  \item \code{run_grid.py --dry-run} hiện đúng job.
+  \item \code{REFLECT_API_KEY} có giá trị nếu reflection dùng API hosted.
+  \item \code{RUN_DIR} là thư mục mới, không trộn với lần chạy khác.
+  \item Đủ dung lượng đĩa cho cache, generations và artifact bundle.
+\end{enumerate}
+
+\section{Lỗi thường gặp}
+
+\begin{center}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.38\linewidth}>{\raggedright\arraybackslash}p{0.54\linewidth}@{}}
+\toprule
+\textbf{Hiện tượng} & \textbf{Cách kiểm tra} \\
+\midrule
+Không kết nối được endpoint & Kiểm tra \code{curl \$BASE_URL/v1/models}; đảm bảo không nối thừa \code{/v1}. \\
+Thiếu model \code{t2l_<task>} & Kiểm tra \code{$T2L_ROOT/loras}, file serve config và log vLLM. \\
+Sinh adapter lỗi & Kiểm tra checkpoint, \code{t2l_python}, submodule và \code{t2l_generate.log}. \\
+Reflection trả 401/403 & Kiểm tra \code{REFLECT_API_KEY} và \code{reflection_base_url}. \\
+GEPA tạo 0 candidate & Kiểm tra feedback, seed instruction và reflection model. \\
+Gate fail & Đọc \code{*.gate.json}; không tiếp tục coi kết quả là hợp lệ nếu adapter collapse. \\
+Kết quả thiếu arm & Chạy lại đúng \code{--arms} hoặc \code{--gepa-arms}; không trộn run directory. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Nguyên tắc sử dụng kết quả}
+
+\begin{itemize}
+  \item Chỉ so sánh các arm trong cùng harness, cùng split, cùng extractor và cùng decode settings.
+  \item Không dùng test item để chọn prompt, adapter hoặc tham số.
+  \item Không so tuyệt đối score với paper nếu prompt, extractor hoặc harness khác.
+  \item Luôn lưu config, seed, commit SHA và run directory cùng kết quả.
+  \item Với kết quả GEPA, đọc cả seed/best prompt và candidate history; không chỉ đọc score cuối.
+  \item Khi nghi ngờ, chạy smoke trên slice nhỏ trước khi dùng thêm GPU-hours.
+\end{itemize}
+
+\vfill
+\begin{center}
+\small\color{muted}
+Hết tài liệu hướng dẫn vận hành.
+\end{center}
+
+\end{document}
